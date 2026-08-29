@@ -150,6 +150,7 @@ async def test_reauthentication_updates_only_key(hass: HomeAssistant) -> None:
         options={CONF_MODEL: "provider/paid-speech", CONF_VOICE: "Sulafat"},
     )
     entry.add_to_hass(hass)
+    reload_entry = AsyncMock()
     with (
         patch(
             "custom_components.openrouter_tts.config_flow.OpenRouterClient.async_validate_key",
@@ -159,6 +160,7 @@ async def test_reauthentication_updates_only_key(hass: HomeAssistant) -> None:
             "custom_components.openrouter_tts.config_flow.OpenRouterClient.async_fetch_catalog",
             new=AsyncMock(return_value=_models()),
         ),
+        patch.object(hass.config_entries, "async_reload", new=reload_entry),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -172,11 +174,13 @@ async def test_reauthentication_updates_only_key(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_API_KEY: "new-secret"}
         )
+        await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     assert entry.data == {CONF_API_KEY: "new-secret"}
     assert entry.options[CONF_MODEL] == "provider/paid-speech"
+    reload_entry.assert_awaited_once_with(entry.entry_id)
     await flush_store(hass.config_entries._store)
 
 
