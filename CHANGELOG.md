@@ -29,6 +29,8 @@ Prerelease versions may contain breaking changes while the integration is being 
   atomic writes, bounded downloads, and secret-safe error handling.
 - Documentation for Home Assistant core cache/trace limitations and unauthenticated
   `/config/www` exposure.
+- Documented and reviewed the upstream Home Assistant development/test dependency alert
+  for GHSA-g6cj-pr64-35w5; the affected PKCS#7 code path is not used by this integration.
 
 [Unreleased]: https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/compare/v0.1.0-beta.1...HEAD
 [0.1.0-beta.1]: https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/releases/tag/v0.1.0-beta.1

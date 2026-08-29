@@ -451,6 +451,12 @@ Latest recorded verification for the 2026-08-29 `v0.1.0-beta.1` release candidat
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
+- Dependabot's [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5)
+  alert is present only through the locked development/test Home Assistant dependency,
+  which currently pins `cryptography==48.0.1`. The affected PKCS#7 decryption path is not
+  used or exposed by this integration or its tests, so the repository alert is dismissed
+  as `not_used`; it must be reassessed when upstream Home Assistant adopts
+  `cryptography>=50.0.0`. This dismissal does not replace Home Assistant security updates.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 [CHANGELOG.md](CHANGELOG.md). The current verification matrix, including pending checks,

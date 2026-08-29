@@ -73,6 +73,26 @@ is available. The manual workflow checks and checks out `main`, and third-party 
 are pinned to commits, but those YAML controls do not replace the server-side environment
 policy because a workflow dispatched from another ref can contain different YAML.
 
+## Upstream development dependency advisory
+
+The locked development/test graph includes Home Assistant 2026.8.3, which pins
+`cryptography==48.0.1`. GitHub therefore reports
+[GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5); version 50.0.0
+is the first patched release. This repository has no packaged runtime dependency on
+`cryptography`, and neither the integration nor its tests call the affected PKCS#7
+EnvelopedData decryption APIs or expose an adaptive decryption service. The alert is
+dismissed as `not_used` for this repository because forcing version 50 would violate the
+tested Home Assistant package constraint. Reassess the dismissal as soon as upstream
+Home Assistant permits version 50 or later. Users should still install Home Assistant
+security updates; this project cannot remediate Home Assistant's own dependency graph.
+
+An include-development-dependencies Trivy scan also reports CVE-2026-69249 against the
+locked 48.0.1 version. The upstream
+[GHSA-jwv3-5hgf-82ww](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) advisory marks
+versions earlier than 48.0.0 as affected and rates the issue Low, so 48.0.1 is outside
+that published range. This is recorded as a scanner-database mismatch rather than hidden
+as a fixed dependency.
+
 ## Storage trust boundary
 
 The administrator-selected Home Assistant config directory is the storage trust anchor.

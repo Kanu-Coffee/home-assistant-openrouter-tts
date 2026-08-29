@@ -10,7 +10,7 @@ import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, flush_store
 
 from custom_components.openrouter_tts.const import (
     CONF_API_KEY,
@@ -177,6 +177,7 @@ async def test_reauthentication_updates_only_key(hass: HomeAssistant) -> None:
     assert result["reason"] == "reauth_successful"
     assert entry.data == {CONF_API_KEY: "new-secret"}
     assert entry.options[CONF_MODEL] == "provider/paid-speech"
+    await flush_store(hass.config_entries._store)
 
 
 async def test_failed_reauthentication_preserves_stored_key(

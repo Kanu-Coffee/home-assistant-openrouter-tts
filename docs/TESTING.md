@@ -21,6 +21,7 @@ Status as of 2026-08-29 for the `v0.1.0-beta.1` release candidate:
 | HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The mock-backed path passed install, flows, restart persistence, refresh, file generation/retrieval/deletion, `tts.speak`, reload, and removal. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
 | OpenRouter live smoke | Manual workflow | Not run | Use a temporary secret only after release-candidate approval; generation is optional and verified-free only. |
 | Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
+| Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
 Do not change **Pending**, **In progress**, or **Not run** to **Passed** until the named
 check has completed successfully on the candidate revision.
@@ -164,7 +165,7 @@ HACS validation: passed in public GitHub Actions Quality run 33239859740
 HAOS: 18.2 / Core 2026.8.3; mock-backed checklist passed except the explicit gaps above
 Live OpenRouter: not run
 Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain
+Known failures/skips: live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
 For later candidates, copy the template below and replace every placeholder:
