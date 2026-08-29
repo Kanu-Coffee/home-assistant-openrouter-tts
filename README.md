@@ -428,7 +428,7 @@ catalog without generating audio. Its optional generation switch sends exactly o
 model; otherwise it sends no generation request. It never selects a paid or unknown-cost
 model as a fallback.
 
-Latest recorded verification for the 2026-08-29 uncommitted release-candidate worktree:
+Latest recorded verification for the 2026-08-29 `v0.1.0-beta.1` release candidate:
 
 - The local mock suite passed all 193 tests on Python 3.14.4 with 88.57%
   branch-enabled combined coverage. Ruff lint, Ruff formatting, and strict mypy checks
@@ -448,6 +448,9 @@ Latest recorded verification for the 2026-08-29 uncommitted release-candidate wo
   `tts.clear_cache` were not exercised. HACS validation must be rerun after the remote
   repository exists. No real OpenRouter API call has been made, and the live smoke
   workflow has not been run.
+- Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
+  bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
+  critical production dependency finding.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 [CHANGELOG.md](CHANGELOG.md). The current verification matrix, including pending checks,

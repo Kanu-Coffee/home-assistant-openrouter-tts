@@ -7,7 +7,7 @@ skipped checks visible.
 
 ## Current pre-release status
 
-Status as of 2026-08-29 for the uncommitted release-candidate worktree:
+Status as of 2026-08-29 for the `v0.1.0-beta.1` release candidate:
 
 | Area | Target | Status | Evidence or next action |
 | --- | --- | --- | --- |
@@ -20,7 +20,7 @@ Status as of 2026-08-29 for the uncommitted release-candidate worktree:
 | HACS validation | Repository | Not run | The validator returned HTTP 404 because the remote GitHub repository does not exist yet; rerun after repository creation. |
 | HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The mock-backed path passed install, flows, restart persistence, refresh, file generation/retrieval/deletion, `tts.speak`, reload, and removal. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
 | OpenRouter live smoke | Manual workflow | Not run | Use a temporary secret only after release-candidate approval; generation is optional and verified-free only. |
-| Secret scan | Tracked files and Git history | Pending after commits | Run a credential scanner and the explicit pattern checks described below. |
+| Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
 
 Do not change **Pending**, **In progress**, or **Not run** to **Passed** until the named
 check has completed successfully on the candidate revision.
@@ -154,7 +154,7 @@ records. Use `cache: false`, run `tts.clear_cache`, and remove traces after sens
 Current result log:
 
 ```text
-Revision/tag: uncommitted release-candidate worktree
+Revision/tag: v0.1.0-beta.1 release candidate (tag pending publication approval)
 Date (UTC): 2026-08-29
 Local: Python 3.14.4; 193 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
 Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
@@ -163,8 +163,8 @@ hassfest: passed; 0 invalid integrations
 HACS validation: not run; remote repository absence caused HTTP 404
 HAOS: 18.2 / Core 2026.8.3; mock-backed checklist passed except the explicit gaps above
 Live OpenRouter: not run
-Secret scan: pending after commits
-Known failures/skips: HACS, live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain
+Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
+Known failures/skips: HACS validation, live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain
 ```
 
 For later candidates, copy the template below and replace every placeholder:
