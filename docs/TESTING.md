@@ -192,7 +192,7 @@ HACS validation: passed in public GitHub Actions Quality run 33239859740
 HAOS: 18.2 / Core 2026.8.3; mock-backed checklist and two-call live path passed except the explicit gaps above
 Live OpenRouter: paid Gemini/Sulafat generate_file 1 call; verified-free Deepgram Flux tts.speak 1 call; total observed usage delta USD 0.001683
 Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
+Known failures/skips: temporary-key owner revocation is pending; HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
 For later candidates, copy the template below and replace every placeholder:

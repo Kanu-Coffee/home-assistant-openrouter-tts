@@ -455,7 +455,7 @@ Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source
   restarted, the HA backup and VM snapshot lists were empty, and post-cleanup
   credential-pattern scans of Home Assistant storage and logs found no key. Runtime
   reauthentication and an invalid model/voice submission through the HAOS UI remain
-  unexercised.
+  unexercised. The temporary upstream key must still be revoked by its owner.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
