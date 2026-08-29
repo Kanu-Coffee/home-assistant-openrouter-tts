@@ -1,0 +1,12 @@
+{
+  "domain": "openrouter_tts",
+  "name": "OpenRouter TTS",
+  "codeowners": ["@Kanu-Coffee"],
+  "config_flow": true,
+  "documentation": "https://github.com/Kanu-Coffee/home-assistant-openrouter-tts",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/issues",
+  "single_config_entry": true,
+  "version": "0.1.0-beta.1"
+}

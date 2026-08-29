@@ -1,0 +1,93 @@
+generate_file:
+  name: Generate announcement file
+  description: Generate validated speech and atomically save it below the configured root.
+  fields:
+    config_entry_id:
+      name: Config entry
+      description: OpenRouter TTS config entry to use.
+      required: false
+      selector:
+        config_entry:
+          integration: openrouter_tts
+    text:
+      name: Text
+      description: Text sent to OpenRouter and the selected model provider.
+      required: true
+      example: "The scheduled task is complete."
+      selector:
+        text:
+          multiline: true
+    filename:
+      name: Filename
+      description: One filename, optionally ending in .mp3 or .wav, without directory separators.
+      required: true
+      example: task_complete
+      selector:
+        text:
+          multiline: false
+    subdirectory:
+      name: Subdirectory
+      description: Optional relative path below the configured storage root.
+      required: false
+      example: announcements
+      selector:
+        text:
+          multiline: false
+    format:
+      name: Format
+      description: Requested audio format. Validated raw PCM is returned as WAV.
+      required: false
+      default: mp3
+      selector:
+        select:
+          options:
+            - label: MP3
+              value: mp3
+            - label: WAV
+              value: wav
+          mode: dropdown
+    overwrite:
+      name: Overwrite
+      description: Replace an existing regular audio file atomically.
+      required: false
+      default: false
+      selector:
+        boolean:
+delete_file:
+  name: Delete announcement file
+  description: Safely delete one regular MP3 or WAV file below the configured root.
+  fields:
+    config_entry_id:
+      name: Config entry
+      description: OpenRouter TTS config entry to use.
+      required: false
+      selector:
+        config_entry:
+          integration: openrouter_tts
+    filename:
+      name: Filename
+      description: Filename including the .mp3 or .wav extension.
+      required: true
+      example: task_complete.wav
+      selector:
+        text:
+          multiline: false
+    subdirectory:
+      name: Subdirectory
+      description: Optional relative path below the configured storage root.
+      required: false
+      example: announcements
+      selector:
+        text:
+          multiline: false
+refresh_catalog:
+  name: Refresh model catalog
+  description: Refresh speech capabilities, voices, availability, and pricing metadata.
+  fields:
+    config_entry_id:
+      name: Config entry
+      description: OpenRouter TTS config entry to refresh.
+      required: false
+      selector:
+        config_entry:
+          integration: openrouter_tts

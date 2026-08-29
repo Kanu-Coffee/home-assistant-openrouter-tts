@@ -1,0 +1,255 @@
+{
+  "title": "OpenRouter TTS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to OpenRouter",
+        "description": "Enter an OpenRouter API key. This validates the key and loads the current speech-model catalog; it does not guarantee balance, model access, pricing, or provider availability.",
+        "data": {
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "Stored in Home Assistant's config entry storage. Do not share it in logs or issue reports."
+        }
+      },
+      "model": {
+        "title": "Choose a speech model",
+        "description": "Only catalog models with explicit speech output and supported voices are listed. Free and price information is a current snapshot, not a cost guarantee.",
+        "data": {
+          "model": "Model"
+        }
+      },
+      "voice": {
+        "title": "Choose voice and defaults",
+        "description": "The model and voice are validated and saved together. Files below www are exposed through /local and may be accessible without authentication.",
+        "data": {
+          "voice": "Voice",
+          "speed": "Speed",
+          "storage_root": "Storage root"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect OpenRouter TTS",
+        "description": "The stored API key was rejected. Enter a replacement key. This does not revoke the old key in OpenRouter.",
+        "data": {
+          "api_key": "New API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "OpenRouter rejected the API key.",
+      "access_denied": "This API key is not allowed to access the required OpenRouter endpoint.",
+      "cannot_connect": "Could not connect to OpenRouter. Check the network and try again.",
+      "connect_timeout": "Connecting to OpenRouter timed out.",
+      "read_timeout": "OpenRouter did not respond in time.",
+      "rate_limited": "OpenRouter rate limited the request. Wait before trying again.",
+      "server_error": "OpenRouter or an upstream provider is temporarily unavailable.",
+      "invalid_catalog": "OpenRouter returned an invalid model catalog.",
+      "no_tts_models": "No model with confirmed speech output and supported voices was found.",
+      "model_not_found": "The selected model is no longer in this catalog snapshot.",
+      "model_voice_mismatch": "The selected voice is not supported by the selected model.",
+      "unsafe_path": "The storage path must remain inside the Home Assistant configuration directory and cannot contain unsafe components.",
+      "no_free_models": "No verified-free TTS model is available in the current catalog. Select all speech models to continue.",
+      "unknown": "An unexpected error occurred while configuring OpenRouter TTS."
+    },
+    "abort": {
+      "already_configured": "OpenRouter TTS is already configured.",
+      "reauth_successful": "OpenRouter TTS was reauthenticated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OpenRouter TTS options",
+        "menu_options": {
+          "configure": "Configure model, voice, speed, and storage",
+          "refresh": "Refresh model catalog"
+        }
+      },
+      "configure": {
+        "title": "Choose model display scope",
+        "description": "Free status reflects only the current catalog and never guarantees future or routed-provider cost. Changing this filter does not change saved speech settings until the final step is submitted.",
+        "data": {
+          "model_filter": "Model display scope"
+        }
+      },
+      "model": {
+        "title": "Choose a speech model",
+        "description": "Unavailable saved models may be shown only so an existing selection is not silently replaced.",
+        "data": {
+          "model": "Model"
+        }
+      },
+      "voice": {
+        "title": "Confirm voice and defaults",
+        "description": "All values on this page are validated and saved atomically. A speed field is sent upstream only when explicit capability metadata supports it.",
+        "data": {
+          "voice": "Voice",
+          "speed": "Speed",
+          "storage_root": "Storage root"
+        }
+      },
+      "refresh": {
+        "title": "Refresh catalog",
+        "description": "Fetch current speech capability, voices, availability, and pricing metadata. Speech is not generated and no billable generation request is made.",
+        "data": {}
+      }
+    },
+    "error": {
+      "invalid_auth": "OpenRouter rejected the API key. Start reauthentication.",
+      "access_denied": "This API key cannot access the required OpenRouter endpoint.",
+      "cannot_connect": "Could not connect to OpenRouter. The last good catalog remains available where possible.",
+      "connect_timeout": "Connecting to OpenRouter timed out.",
+      "read_timeout": "OpenRouter did not respond in time.",
+      "rate_limited": "OpenRouter rate limited the catalog request.",
+      "server_error": "OpenRouter or an upstream provider is temporarily unavailable.",
+      "invalid_catalog": "OpenRouter returned an invalid model catalog.",
+      "model_not_found": "The selected model is not in this catalog snapshot.",
+      "model_voice_mismatch": "The selected model and voice are not a valid pair.",
+      "unsafe_path": "The storage root must be an absolute path inside the Home Assistant configuration directory without traversal.",
+      "no_free_models": "No verified-free TTS model is available now. Return and select all speech models; saved settings were not changed.",
+      "unknown": "An unexpected error occurred while loading options."
+    },
+    "abort": {
+      "catalog_refreshed": "The catalog was refreshed successfully ({count} speech models)."
+    }
+  },
+  "entity": {
+    "tts": {
+      "openrouter_tts": {
+        "name": "OpenRouter TTS"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown": {
+      "message": "OpenRouter TTS encountered an unexpected error."
+    },
+    "invalid_auth": {
+      "message": "OpenRouter rejected the API key. Reauthenticate the integration."
+    },
+    "access_denied": {
+      "message": "The API key is not allowed to use this OpenRouter resource."
+    },
+    "insufficient_credits": {
+      "message": "The OpenRouter account has insufficient credits for this request."
+    },
+    "model_not_found": {
+      "message": "The selected OpenRouter speech model is unavailable."
+    },
+    "invalid_request": {
+      "message": "OpenRouter rejected the speech request settings."
+    },
+    "rate_limited": {
+      "message": "OpenRouter rate limited this request. Wait before trying again."
+    },
+    "server_error": {
+      "message": "OpenRouter or the selected provider is temporarily unavailable."
+    },
+    "cannot_connect": {
+      "message": "Could not connect to OpenRouter."
+    },
+    "connect_timeout": {
+      "message": "Connecting to OpenRouter timed out."
+    },
+    "read_timeout": {
+      "message": "Waiting for OpenRouter timed out. Speech generation was not retried because it may already be billable."
+    },
+    "invalid_catalog": {
+      "message": "OpenRouter returned an invalid speech model catalog."
+    },
+    "invalid_audio": {
+      "message": "OpenRouter returned invalid or unsupported audio."
+    },
+    "audio_too_large": {
+      "message": "The generated audio exceeded the 20 MiB safety limit."
+    },
+    "unsafe_path": {
+      "message": "The requested file path is unsafe or leaves the configured storage root."
+    },
+    "file_exists": {
+      "message": "The destination file already exists and overwrite is disabled."
+    },
+    "storage_error": {
+      "message": "Home Assistant could not safely complete the audio file operation. Check storage permissions and free space."
+    },
+    "file_not_found": {
+      "message": "The requested audio file was not found."
+    },
+    "model_voice_mismatch": {
+      "message": "The selected model and voice are not a valid catalog pair."
+    },
+    "no_free_models": {
+      "message": "No verified-free TTS model is available in the current catalog."
+    },
+    "config_entry_not_loaded": {
+      "message": "OpenRouter TTS is not loaded. Check the integration status first."
+    },
+    "config_entry_required": {
+      "message": "Select an OpenRouter TTS config entry."
+    },
+    "invalid_speed": {
+      "message": "Speed must be a number from 0.5 through 2.0."
+    }
+  },
+  "services": {
+    "generate_file": {
+      "name": "Generate announcement file",
+      "description": "Generate validated speech and atomically save it below the configured root.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry",
+          "description": "OpenRouter TTS entry to use."
+        },
+        "text": {
+          "name": "Text",
+          "description": "Text sent to OpenRouter and the selected provider."
+        },
+        "filename": {
+          "name": "Filename",
+          "description": "One filename, optionally ending in .mp3 or .wav, without directory separators."
+        },
+        "subdirectory": {
+          "name": "Subdirectory",
+          "description": "Optional relative directory below the configured root."
+        },
+        "format": {
+          "name": "Format",
+          "description": "Requested MP3 or WAV output. The validated response may require WAV."
+        },
+        "overwrite": {
+          "name": "Overwrite",
+          "description": "Replace an existing regular file atomically."
+        }
+      }
+    },
+    "delete_file": {
+      "name": "Delete announcement file",
+      "description": "Safely delete one regular MP3 or WAV file below the configured root.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry",
+          "description": "OpenRouter TTS entry to use."
+        },
+        "filename": {
+          "name": "Filename",
+          "description": "Filename including .mp3 or .wav."
+        },
+        "subdirectory": {
+          "name": "Subdirectory",
+          "description": "Optional relative directory below the configured root."
+        }
+      }
+    },
+    "refresh_catalog": {
+      "name": "Refresh model catalog",
+      "description": "Refresh speech capabilities, voices, availability, and pricing metadata.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry",
+          "description": "OpenRouter TTS entry to refresh."
+        }
+      }
+    }
+  }
+}
