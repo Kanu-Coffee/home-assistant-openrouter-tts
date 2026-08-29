@@ -19,7 +19,7 @@ Status as of 2026-08-29 for the published `v0.1.0-beta.1` source:
 | hassfest | Repository | Passed | Official validation reported 0 invalid integrations. |
 | HACS validation | Public repository | Passed | The pinned HACS validation action completed successfully in the first public [Quality run](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33239859740). |
 | HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | Mock-backed install/lifecycle checks passed. A later opt-in test used exact release bytes for real Config/Options flows, catalog refresh, one paid file generation, one verified-free `tts.speak` fetch, cleanup, and restart. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
-| OpenRouter live provider | Direct opt-in HAOS test; manual workflow not used | Passed | Exactly two generation requests: paid Gemini/Sulafat through `generate_file`, and verified-free Deepgram Flux through `tts.speak` plus a controlled one-fetch MPD sink. Observed total key usage delta: USD 0.001683. Details and limitations are below. |
+| OpenRouter live provider | Direct opt-in HAOS test; manual workflow not used | Passed | The HA test path issued two service-triggered live generation calls, and the client does not automatically retry generation POSTs: paid Gemini/Sulafat through `generate_file`, and verified-free Deepgram Flux through `tts.speak` plus a controlled one-fetch MPD sink. Observed total key usage delta: USD 0.001683. Details and limitations are below. |
 | Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
 | Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
@@ -115,8 +115,9 @@ repository.
   the pre-fix TTS-engine-name failure, demonstrating the documented core privacy limit.
 
 The initial HAOS checks used an isolated mock path. A later direct opt-in check used the
-exact published component bytes and a temporary credential for exactly two real speech
-requests:
+exact published component bytes and a temporary credential. The HA test path issued two
+service-triggered live speech-generation calls, and the client does not automatically
+retry generation POSTs:
 
 - Paid `generate_file`: `google/gemini-3.1-flash-tts-preview` with `Sulafat` produced a
   78,764-byte WAV. It parsed as 24 kHz, 16-bit, mono, 39,360 frames (1.64 seconds), was
@@ -133,10 +134,10 @@ requests:
 
 The generated audio, TTS cache, temporary MPD entry, OpenRouter config entry, catalog
 store, driver, and sink were removed. Core was restarted. Count-only scans found zero
-credential patterns in Home Assistant storage and logs, and the VM was shut down. The
-temporary upstream key must still be revoked by its owner; filesystem cleanup is not a
-substitute for revocation. No private host, entity ID, credential, proxy URL, or generated
-audio is retained in this repository.
+credential patterns in Home Assistant storage and logs; the HA backup list and libvirt VM
+snapshot list were empty, and the VM was shut down. The temporary upstream key must still
+be revoked by its owner; filesystem cleanup is not a substitute for revocation. No private
+host, entity ID, credential, proxy URL, or generated audio is retained in this repository.
 
 During setup, placing a safety backup beneath `custom_components` made Home Assistant
 discover two manifests for the same domain and reject the flow. Moving that backup out of

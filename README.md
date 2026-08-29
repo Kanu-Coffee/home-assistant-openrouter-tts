@@ -440,20 +440,22 @@ Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source
 - On HAOS 18.2 with Core 2026.8.3, the isolated test path passed a new installation,
   invalid-key handling, options and restart persistence, catalog refresh, 24 kHz/16-bit/
   mono WAV file generation, `/local` retrieval, and `tts.speak` MP3 media-source fetch.
-- A post-publication opt-in HAOS test used the exact release component bytes for two live
-  provider requests. `generate_file` used Gemini 3.1 Flash TTS Preview with `Sulafat` and
+- A post-publication opt-in HAOS test used the exact release component bytes and issued
+  two service-triggered live generation calls; the client does not automatically retry
+  generation POSTs. `generate_file` used Gemini 3.1 Flash TTS Preview with `Sulafat` and
   returned a 78,764-byte, 24 kHz, 16-bit, mono WAV; mode 0600 storage and unauthenticated
   `/local` HTTP retrieval both passed. `tts.speak` used the catalog-confirmed
   `deepgram/flux-tts:free` model and a temporary one-fetch MPD sink; the full media-source
   resolution and GET returned a 9,936-byte, 24 kHz mono MP3. No physical speaker was
   exercised.
-- Key usage moved from USD 0 to USD 0.001683 across those two requests, consistent with
+- Key usage moved from USD 0 to USD 0.001683 across those two calls, consistent with
   the paid request and no separately observed free-model charge. This one observation is
   not a price guarantee. Both test messages were short and non-sensitive. The saved
   audio, TTS cache, catalog, temporary player, and config entry were removed; Core was
-  restarted, and post-cleanup credential-pattern scans of Home Assistant storage and
-  logs found no key. Runtime reauthentication and an invalid model/voice submission
-  through the HAOS UI remain unexercised.
+  restarted, the HA backup and VM snapshot lists were empty, and post-cleanup
+  credential-pattern scans of Home Assistant storage and logs found no key. Runtime
+  reauthentication and an invalid model/voice submission through the HAOS UI remain
+  unexercised.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
