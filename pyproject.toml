@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "home-assistant-openrouter-tts"
+version = "0.1.0b1"
+description = "Unofficial OpenRouter text-to-speech integration for Home Assistant"
+readme = "README.md"
+requires-python = ">=3.13.2"
+license = "MIT"
+authors = [{ name = "Kanu-Coffee" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ha-ffmpeg==3.2.2; python_full_version >= '3.14.2'",
+  "mypy==2.3.1",
+  "mutagen==1.48.1",
+  "pytest==9.0.3",
+  "pytest-cov==7.1.0",
+  "pytest-homeassistant-custom-component==0.13.357; python_full_version >= '3.14.2'",
+  "ruff==0.16.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["custom_components/openrouter_tts"]
+
+[tool.pytest.ini_options]
+addopts = [
+  "--strict-config",
+  "--strict-markers",
+  "--cov=custom_components.openrouter_tts",
+  "--cov-report=term-missing:skip-covered",
+  "--cov-report=xml",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["custom_components/openrouter_tts"]
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+fail_under = 85
+show_missing = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+  "ASYNC",
+  "B",
+  "C4",
+  "DTZ",
+  "E",
+  "F",
+  "I",
+  "LOG",
+  "PERF",
+  "PIE",
+  "PT",
+  "PTH",
+  "RET",
+  "RUF",
+  "SIM",
+  "T20",
+  "TRY",
+  "UP",
+  "W",
+]
+ignore = ["TRY003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+files = ["custom_components/openrouter_tts"]
+exclude = ["custom_components/openrouter_tts/translations"]
+show_error_codes = true
+warn_unreachable = true

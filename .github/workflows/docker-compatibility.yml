@@ -1,0 +1,22 @@
+name: Home Assistant container compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    name: Home Assistant ${{ matrix.home_assistant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        home_assistant: ["2025.12.5", "2026.8.3"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: scripts/docker_import_check.sh "${{ matrix.home_assistant }}"

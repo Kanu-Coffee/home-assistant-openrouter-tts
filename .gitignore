@@ -1,0 +1,25 @@
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.py[cod]
+coverage.xml
+htmlcov/
+tmp/
+.env
+.env.*
+!/.env.example
+*.log
+*.mp3
+*.wav
+
+# Never stage a Home Assistant configuration or backup by accident.
+/.storage/
+/secrets.yaml
+/home-assistant*.db*
+/home-assistant.log.*
+/*.tar
+/*.tar.gz
+/*.zip
