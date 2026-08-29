@@ -155,7 +155,7 @@ records. Use `cache: false`, run `tts.clear_cache`, and remove traces after sens
 Current result log:
 
 ```text
-Revision/tag: v0.1.0-beta.1 release candidate (tag pending publication approval)
+Revision/tag: v0.1.0-beta.1 release candidate (publication approved; final tag pending)
 Date (UTC): 2026-08-29
 Local: Python 3.14.4; 193 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
 Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
