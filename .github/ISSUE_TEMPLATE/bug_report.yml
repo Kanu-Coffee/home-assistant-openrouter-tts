@@ -28,7 +28,7 @@ body:
     attributes:
       label: OpenRouter TTS version
       description: Use the installed release tag or exact commit, not "latest."
-      placeholder: v0.1.0-beta.1 or commit SHA
+      placeholder: Integration version or commit SHA
     validations:
       required: true
 

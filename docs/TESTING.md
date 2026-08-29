@@ -7,19 +7,20 @@ skipped checks visible.
 
 ## Current release status
 
-Status as of 2026-08-29 for the published `v0.1.0-beta.1` source:
+Status as of 2026-08-30 for the `v0.1.0-beta.2` release candidate. Results inherited from
+the published `v0.1.0-beta.1` baseline are explicitly dated below:
 
 | Area | Target | Status | Evidence or next action |
 | --- | --- | --- | --- |
-| Mock unit/integration suite | Python 3.14.4 local environment | Passed | 193 passed. Branch-enabled combined coverage: 88.57% (1,212/1,337 statements and 261/326 branch outcomes covered). |
+| Mock unit/integration suite | Python 3.14.4 local environment | Passed | 194 passed. Branch-enabled combined coverage: 88.57%. |
 | Ruff | Python source and tests | Passed | `ruff check` and `ruff format --check` both passed on the final local candidate. |
 | Mypy | Integration package | Passed | Strict package type checking completed without an issue. |
 | Minimum-version compatibility | Home Assistant 2025.12.5 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:9a5a3eb4a213dfb25932dee9dc6815c9305f78cecb5afa716fa2483163d8fb5b`. |
 | Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
 | hassfest | Repository | Passed | Official validation reported 0 invalid integrations. |
 | HACS validation | Public repository | Passed | The pinned HACS validation action completed successfully in the first public [Quality run](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33239859740). |
-| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | Mock-backed install/lifecycle checks passed. A later opt-in test used exact release bytes for real Config/Options flows, catalog refresh, one paid file generation, one verified-free `tts.speak` fetch, cleanup, and restart. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
-| OpenRouter live provider | Direct opt-in HAOS test; manual workflow not used | Passed | The HA test path issued two service-triggered live generation calls, and the client does not automatically retry generation POSTs: paid Gemini/Sulafat through `generate_file`, and verified-free Deepgram Flux through `tts.speak` plus a controlled one-fetch MPD sink. Observed total key usage delta: USD 0.001683. Details and limitations are below. |
+| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The 2026-08-29 release-byte path passed real Config/Options flows, catalog refresh, paid file generation, verified-free `tts.speak`, cleanup, and restart. The 2026-08-30 candidate passed free Flux MP3 `generate_file` and `/local` retrieval after the identity-header change. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
+| OpenRouter live provider | Direct and HAOS opt-in tests; manual workflow not used | Passed with scoped gaps below | The 2026-08-30 catalog exposed one eligible free TTS model with 36 voices. Exactly five generation attempts were made; two pre-change HAOS calls failed, two direct calls returned valid zero-cost MP3s, and the final identity-header HAOS call passed. WAV and `tts.speak` were not repeated after the hard cap. Details and the separate 2026-08-29 evidence are below. |
 | Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
 | Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
@@ -114,6 +115,8 @@ repository.
   Home Assistant core did record the complete non-sensitive `Test.` input while reporting
   the pre-fix TTS-engine-name failure, demonstrating the documented core privacy limit.
 
+### 2026-08-29 baseline live path
+
 The initial HAOS checks used an isolated mock path. A later direct opt-in check used the
 exact published component bytes and a temporary credential. The HA test path issued two
 service-triggered live speech-generation calls, and the client does not automatically
@@ -144,6 +147,39 @@ discover two manifests for the same domain and reject the flow. Moving that back
 the integration search tree and restarting Core resolved the issue before the API-key
 step; it was a test-harness placement error, not a product-code defect. No generation was
 attempted during that failure.
+
+### 2026-08-30 verified-free matrix
+
+The refreshed OpenRouter catalog contained exactly one model that met all conservative
+free-TTS eligibility requirements: `deepgram/flux-tts:free`, with 36 nonempty advertised
+voices. Its metadata did not advertise speed support, so the integration omitted the
+speed field. No paid or unknown-price model was used.
+
+The run was limited to exactly five generation attempts. Every row below represents one
+generation POST; neither the integration nor the harness automatically retried it.
+
+| Attempt | Path and voice | Result |
+| --- | --- | --- |
+| 1 | HAOS `generate_file`, Flux Alexis, before the identity-header change | Failed with `invalid_audio`. |
+| 2 | Direct OpenRouter, Flux Bree | HTTP 200 `audio/mpeg`; valid 13,248-byte MP3. Generation metadata identified `deepgram/flux-tts:free` and Deepgram and reported total cost/usage 0. |
+| 3 | HAOS `generate_file`, Flux Alexis, before the identity-header change | Failed again with `invalid_audio`. |
+| 4 | Direct OpenRouter, Flux Alexis | HTTP 200 `audio/mpeg`; valid 12,384-byte MP3. Generation metadata identified `deepgram/flux-tts:free` and Deepgram and reported total cost/usage 0. |
+| 5 | HAOS `generate_file`, Flux Alexis, with speech POST `Accept-Encoding: identity` | Passed: valid 14,688-byte, 24 kHz mono MP3, saved successfully and retrieved through `/local`. |
+
+The fifth result validates the changed request path but only correlates success with
+`Accept-Encoding: identity`; the two earlier HAOS response bodies were not preserved, so
+the underlying failure mechanism is not proven. Response validation remains strict, and
+no fallback generation or parser relaxation was introduced.
+
+The `/key` endpoint continued to report usage USD 0.001683, while both its usage and
+remaining values had delta 0 over a 60-second post-run observation. That is consistent
+with the direct generation metadata reporting zero cost for attempts 2 and 4, but remains
+a point-in-time observation rather than a future price guarantee.
+
+The five-attempt hard cap was reached, so this 2026-08-30 run did not issue another WAV
+or `tts.speak` request. The verified-free Flux `tts.speak` media-source flow passed on
+2026-08-29 as recorded above. All local test artifacts from the current run were removed.
+The temporary upstream key still must be revoked by its owner.
 
 ## Manual OpenRouter smoke test
 
@@ -182,17 +218,17 @@ records. Use `cache: false`, run `tts.clear_cache`, and remove traces after sens
 Current result log:
 
 ```text
-Revision/tag: v0.1.0-beta.1 (published; live validation used matching component bytes)
-Date (UTC): 2026-08-29
-Local: Python 3.14.4; 193 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
+Revision/tag: v0.1.0-beta.2 release candidate
+Date (Asia/Seoul): 2026-08-30
+Local: Python 3.14.4; 194 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
 Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 Docker stable: HA Core 2026.8.3; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 hassfest: passed; 0 invalid integrations
 HACS validation: passed in public GitHub Actions Quality run 33239859740
-HAOS: 18.2 / Core 2026.8.3; mock-backed checklist and two-call live path passed except the explicit gaps above
-Live OpenRouter: paid Gemini/Sulafat generate_file 1 call; verified-free Deepgram Flux tts.speak 1 call; total observed usage delta USD 0.001683
+HAOS: 18.2 / Core 2026.8.3; 2026-08-29 baseline path and 2026-08-30 final identity-header MP3 generate_file passed except the explicit gaps above
+Live OpenRouter: 2026-08-29 paid Gemini generate_file + free Flux tts.speak passed; 2026-08-30 free-only matrix made exactly 5 attempts (2 pre-change HAOS failures, 2 direct zero-cost MP3 passes, 1 identity-header HAOS MP3 pass); /key usage 0.001683 with usage and remaining deltas both 0 over 60 seconds
 Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: temporary-key owner revocation is pending; HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
+Known failures/skips: 2026-08-30 WAV and tts.speak were not run after the five-attempt hard cap; temporary-key owner revocation is pending; HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
 For later candidates, copy the template below and replace every placeholder:

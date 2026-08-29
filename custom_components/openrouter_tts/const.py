@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "openrouter_tts"
 NAME: Final = "OpenRouter TTS"
-VERSION: Final = "0.1.0-beta.1"
+VERSION: Final = "0.1.0-beta.2"
 
 CONF_API_KEY: Final = "api_key"
 CONF_MODEL: Final = "model"

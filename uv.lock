@@ -1366,7 +1366,7 @@ wheels = [
 
 [[package]]
 name = "home-assistant-openrouter-tts"
-version = "0.1.0b1"
+version = "0.1.0b2"
 source = { editable = "." }
 
 [package.dev-dependencies]

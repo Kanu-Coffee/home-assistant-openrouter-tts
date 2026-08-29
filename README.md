@@ -428,9 +428,10 @@ catalog without generating audio. Its optional generation switch sends exactly o
 model; otherwise it sends no generation request. It never selects a paid or unknown-cost
 model as a fallback.
 
-Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source:
+Latest recorded verification as of 2026-08-30 covers the published
+`v0.1.0-beta.1` baseline and the `v0.1.0-beta.2` release candidate:
 
-- The local mock suite passed all 193 tests on Python 3.14.4 with 88.57%
+- The local mock suite passed all 194 tests on Python 3.14.4 with 88.57%
   branch-enabled combined coverage. Ruff lint, Ruff formatting, and strict mypy checks
   also passed.
 - Home Assistant Core 2025.12.5 and 2026.8.3 Docker checks both passed integration import
@@ -440,9 +441,10 @@ Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source
 - On HAOS 18.2 with Core 2026.8.3, the isolated test path passed a new installation,
   invalid-key handling, options and restart persistence, catalog refresh, 24 kHz/16-bit/
   mono WAV file generation, `/local` retrieval, and `tts.speak` MP3 media-source fetch.
-- A post-publication opt-in HAOS test used the exact release component bytes and issued
-  two service-triggered live generation calls; the client does not automatically retry
-  generation POSTs. `generate_file` used Gemini 3.1 Flash TTS Preview with `Sulafat` and
+- A 2026-08-29 post-publication opt-in HAOS test used the exact release component bytes
+  and issued two service-triggered live generation calls; the client does not
+  automatically retry generation POSTs. `generate_file` used Gemini 3.1 Flash TTS
+  Preview with `Sulafat` and
   returned a 78,764-byte, 24 kHz, 16-bit, mono WAV; mode 0600 storage and unauthenticated
   `/local` HTTP retrieval both passed. `tts.speak` used the catalog-confirmed
   `deepgram/flux-tts:free` model and a temporary one-fetch MPD sink; the full media-source
@@ -456,6 +458,27 @@ Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source
   credential-pattern scans of Home Assistant storage and logs found no key. Runtime
   reauthentication and an invalid model/voice submission through the HAOS UI remain
   unexercised. The temporary upstream key must still be revoked by its owner.
+- The 2026-08-30 catalog snapshot had exactly one conservatively eligible free TTS model,
+  `deepgram/flux-tts:free`, with 36 advertised voices. Speed was not advertised as
+  supported and was omitted from every request. The free-only live matrix was capped at
+  exactly five generation attempts:
+
+  | Attempt | Path | Result |
+  | --- | --- | --- |
+  | 1 | HAOS, Flux Alexis, before the header change | Failed with `invalid_audio`; no automatic retry. |
+  | 2 | Direct OpenRouter, Flux Bree | Passed: 13,248-byte MP3; generation metadata reported Deepgram and zero total cost/usage. |
+  | 3 | HAOS, Flux Alexis, before the header change | Failed again with `invalid_audio`; no automatic retry. |
+  | 4 | Direct OpenRouter, Flux Alexis | Passed: 12,384-byte MP3; generation metadata reported Deepgram and zero total cost/usage. |
+  | 5 | HAOS, Flux Alexis, with `Accept-Encoding: identity` on the speech POST | Passed: 14,688-byte, 24 kHz mono MP3 and successful `/local` retrieval. |
+
+  The final success is correlated with requesting an unencoded HTTP representation; it
+  does not prove the root cause of the two earlier HAOS failures. `/key` continued to
+  report usage USD 0.001683, while both its usage and remaining values had delta 0 over
+  a 60-second post-run observation. The five-call cap was then enforced, so WAV and
+  `tts.speak` were not run again on 2026-08-30; the successful 2026-08-29 Flux
+  `tts.speak` path remains the latest evidence for that service. All local artifacts from
+  the current run were removed. Revocation of the temporary upstream key remains an
+  owner action.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
