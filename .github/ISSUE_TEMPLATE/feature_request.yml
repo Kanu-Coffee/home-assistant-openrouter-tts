@@ -1,0 +1,56 @@
+name: Feature request
+description: Propose a focused improvement to the OpenRouter TTS integration.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the Home Assistant use case rather than only naming an upstream API feature. New behavior must preserve conservative billing, privacy, capability, and filesystem-safety rules.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and pull requests for this proposal.
+          required: true
+        - label: This request does not contain credentials, private prompts, personal audio, or private Home Assistant data.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the user problem and why existing model, voice, speed, tts.speak, or file services do not solve it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include the expected UI or service contract and a generalized example if helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include an automation, script, or existing Home Assistant feature if applicable.
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Privacy, cost, and security impact
+      description: Consider external text transfer, provider billing/retries, model metadata uncertainty, file exposure, and backward compatibility.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Link public OpenRouter or Home Assistant documentation instead of pasting copyrighted or private content.

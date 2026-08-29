@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/security/advisories/new
+    about: Report credential exposure, authorization bypasses, path escapes, and other vulnerabilities privately.
+  - name: Troubleshooting and support guide
+    url: https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/blob/main/SUPPORT.md
+    about: Review required diagnostic information and redaction guidance before opening an issue.
+  - name: OpenRouter status
+    url: https://status.openrouter.ai/
+    about: Check for current OpenRouter service incidents before reporting an upstream outage.

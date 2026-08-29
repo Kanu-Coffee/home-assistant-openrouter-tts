@@ -1,0 +1,140 @@
+name: Bug report
+description: Report reproducible incorrect behavior in the OpenRouter TTS integration.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. This is an unofficial community integration.
+
+        **Never paste an API key, bearer header, Home Assistant backup, `.storage` content, complete private prompt, generated personal audio, or unredacted diagnostic archive.** Use a [private security report](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/security/advisories/new) for a vulnerability or suspected secret leak.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and read the troubleshooting guide.
+          required: true
+        - label: I reproduced this with the latest appropriate OpenRouter TTS release or prerelease.
+          required: true
+        - label: I removed credentials, private text, private audio, account data, addresses, and personal entity IDs from this report.
+          required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: OpenRouter TTS version
+      description: Use the installed release tag or exact commit, not "latest."
+      placeholder: v0.1.0-beta.1 or commit SHA
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: 2026.8.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ha_installation
+    attributes:
+      label: Home Assistant installation type
+      options:
+        - Home Assistant OS
+        - Home Assistant Container
+        - Home Assistant Core
+        - Home Assistant Supervised
+        - Other / unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation_method
+    attributes:
+      label: Integration installation method
+      options:
+        - HACS custom repository
+        - Manual copy from a release
+        - Development checkout
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected_area
+    attributes:
+      label: Affected area
+      options:
+        - Initial setup / API-key validation
+        - Reauthentication
+        - Options / model and voice selection
+        - tts.speak
+        - openrouter_tts.generate_file
+        - openrouter_tts.refresh_catalog
+        - openrouter_tts.delete_file
+        - Setup, reload, unload, or restart
+        - Translation or documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model and output format
+      description: Model IDs and mp3/wav are useful. Do not include your API key or private message.
+      placeholder: provider/model-id, wav
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Use a short placeholder message and generalized entity/file names.
+      placeholder: |
+        1. Configure ...
+        2. Call ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the visible error category, but not a complete upstream response body.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Minimal redacted logs
+      description: Remove keys, headers, complete prompts, config-entry IDs, private hosts/IPs, personal paths, and unrelated logs. Plain text is sufficient.
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: State whether catalog refresh, integration reload, or Home Assistant restart changed the result. Do not attach personal audio.
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: Final confirmation
+      options:
+        - label: I understand that a valid API key does not guarantee balance, model access, provider availability, or unchanged pricing.
+          required: true
+        - label: I have not included a secret or sensitive generation text anywhere in this issue.
+          required: true
