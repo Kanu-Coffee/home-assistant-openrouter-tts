@@ -246,6 +246,9 @@ class OpenRouterClient:
 
         headers = self._headers | {
             "Accept": "audio/mpeg, audio/wav, audio/pcm, application/octet-stream",
+            # Disable additional HTTP content coding for deterministic binary
+            # handling across Home Assistant runtime codec sets.
+            "Accept-Encoding": "identity",
             "Content-Type": "application/json",
         }
         timeout = aiohttp.ClientTimeout(

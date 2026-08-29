@@ -261,7 +261,46 @@ async def test_generate_speech_accumulates_audio_chunks_and_metadata(
     assert result.extension == "mp3"
     assert result.content_type == "audio/mpeg"
     assert result.generation_id == "generation-123"
-    assert session.requests[0].kwargs["allow_redirects"] is False
+    request = session.requests[0]
+    assert request.kwargs["allow_redirects"] is False
+    assert request.kwargs["headers"]["Accept-Encoding"] == "identity"
+
+
+async def test_generation_forces_identity_content_encoding_on_wire(
+    aiohttp_server: Any,
+    socket_enabled: None,
+) -> None:
+    """The HA session codec set cannot alter the explicit wire-coding request."""
+    received_encodings: list[list[str]] = []
+    request_count = 0
+
+    async def speech(request: web.Request) -> web.Response:
+        nonlocal request_count
+        request_count += 1
+        received_encodings.append(request.headers.getall("Accept-Encoding", []))
+        await request.json()
+        return web.Response(body=_mp3_bytes(), content_type="audio/mpeg")
+
+    app = web.Application()
+    app.router.add_post("/api/v1/audio/speech", speech)
+    server = await aiohttp_server(app)
+
+    async with aiohttp.ClientSession() as client_session:
+        client = OpenRouterClient(
+            client_session,
+            "wire-header-key",
+            base_url=str(server.make_url("/api/v1")),
+        )
+        result = await client.async_generate_speech(
+            text="Wire header test",
+            model=_model(),
+            voice="Voice One",
+            speed=1.0,
+        )
+
+    assert result.extension == "mp3"
+    assert request_count == 1
+    assert received_encodings == [["identity"]]
 
 
 async def test_generation_redirect_does_not_replay_private_input(
