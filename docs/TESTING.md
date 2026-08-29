@@ -5,9 +5,9 @@ or workflow existing in the repository is not evidence that it passed. Update th
 date, revision, command, and evidence after every release-candidate run; leave failed or
 skipped checks visible.
 
-## Current pre-release status
+## Current release status
 
-Status as of 2026-08-29 for the `v0.1.0-beta.1` release candidate:
+Status as of 2026-08-29 for the published `v0.1.0-beta.1` source:
 
 | Area | Target | Status | Evidence or next action |
 | --- | --- | --- | --- |
@@ -18,8 +18,8 @@ Status as of 2026-08-29 for the `v0.1.0-beta.1` release candidate:
 | Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
 | hassfest | Repository | Passed | Official validation reported 0 invalid integrations. |
 | HACS validation | Public repository | Passed | The pinned HACS validation action completed successfully in the first public [Quality run](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33239859740). |
-| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The mock-backed path passed install, flows, restart persistence, refresh, file generation/retrieval/deletion, `tts.speak`, reload, and removal. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
-| OpenRouter live smoke | Manual workflow | Not run | Use a temporary secret only after release-candidate approval; generation is optional and verified-free only. |
+| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | Mock-backed install/lifecycle checks passed. A later opt-in test used exact release bytes for real Config/Options flows, catalog refresh, one paid file generation, one verified-free `tts.speak` fetch, cleanup, and restart. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
+| OpenRouter live provider | Direct opt-in HAOS test; manual workflow not used | Passed | Exactly two generation requests: paid Gemini/Sulafat through `generate_file`, and verified-free Deepgram Flux through `tts.speak` plus a controlled one-fetch MPD sink. Observed total key usage delta: USD 0.001683. Details and limitations are below. |
 | Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
 | Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
@@ -108,15 +108,41 @@ repository.
 - [x] Unload and reload the config entry.
 - [x] Delete the generated file and remove the config entry; confirm unrelated files are
   not removed.
-- [ ] Run `tts.clear_cache`. Every test call used `cache: false`, so no deliberate disk
-  cache entry was created; the generated file and temporary test artifacts were removed.
+- [x] Run `tts.clear_cache`; restart Core after removing the generated file, temporary
+  media player, and config entry.
 - [x] Review Home Assistant logs. No mock credential or OpenRouter-key pattern was found.
   Home Assistant core did record the complete non-sensitive `Test.` input while reporting
   the pre-fix TTS-engine-name failure, demonstrating the documented core privacy limit.
 
-The completed HAOS checks used an isolated non-live test path. No request was sent to the
-real OpenRouter API, and no private host, entity ID, storage path, credential, or generated
+The initial HAOS checks used an isolated mock path. A later direct opt-in check used the
+exact published component bytes and a temporary credential for exactly two real speech
+requests:
+
+- Paid `generate_file`: `google/gemini-3.1-flash-tts-preview` with `Sulafat` produced a
+  78,764-byte WAV. It parsed as 24 kHz, 16-bit, mono, 39,360 frames (1.64 seconds), was
+  stored with mode 0600, and matched an unauthenticated `/local` HTTP 200 response byte
+  for byte.
+- Verified-free `tts.speak`: `deepgram/flux-tts:free` with `flux-bree-en` was selected
+  through `free_only`. A temporary MPD test sink accepted the real Home Assistant
+  media-source handoff and performed exactly one TTS-proxy GET: HTTP 200, `audio/mpeg`,
+  9,936 bytes, 24 kHz mono MP3 (about 1.66 seconds). This validates the full HA service,
+  resolution, and fetch path, but not a physical Chromecast or speaker.
+- The dedicated key reported usage 0 before the test and USD 0.001683 after both calls.
+  That result is consistent with the paid request and no separately observed charge for
+  the catalog-confirmed free request, but it cannot guarantee future pricing.
+
+The generated audio, TTS cache, temporary MPD entry, OpenRouter config entry, catalog
+store, driver, and sink were removed. Core was restarted. Count-only scans found zero
+credential patterns in Home Assistant storage and logs, and the VM was shut down. The
+temporary upstream key must still be revoked by its owner; filesystem cleanup is not a
+substitute for revocation. No private host, entity ID, credential, proxy URL, or generated
 audio is retained in this repository.
+
+During setup, placing a safety backup beneath `custom_components` made Home Assistant
+discover two manifests for the same domain and reject the flow. Moving that backup out of
+the integration search tree and restarting Core resolved the issue before the API-key
+step; it was a test-harness placement error, not a product-code defect. No generation was
+attempted during that failure.
 
 ## Manual OpenRouter smoke test
 
@@ -155,17 +181,17 @@ records. Use `cache: false`, run `tts.clear_cache`, and remove traces after sens
 Current result log:
 
 ```text
-Revision/tag: v0.1.0-beta.1 release candidate (publication approved; final tag pending)
+Revision/tag: v0.1.0-beta.1 (published; live validation used matching component bytes)
 Date (UTC): 2026-08-29
 Local: Python 3.14.4; 193 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
 Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 Docker stable: HA Core 2026.8.3; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 hassfest: passed; 0 invalid integrations
 HACS validation: passed in public GitHub Actions Quality run 33239859740
-HAOS: 18.2 / Core 2026.8.3; mock-backed checklist passed except the explicit gaps above
-Live OpenRouter: not run
+HAOS: 18.2 / Core 2026.8.3; mock-backed checklist and two-call live path passed except the explicit gaps above
+Live OpenRouter: paid Gemini/Sulafat generate_file 1 call; verified-free Deepgram Flux tts.speak 1 call; total observed usage delta USD 0.001683
 Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
+Known failures/skips: HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
 For later candidates, copy the template below and replace every placeholder:

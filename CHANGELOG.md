@@ -8,6 +8,14 @@ Prerelease versions may contain breaking changes while the integration is being 
 
 ## [Unreleased]
 
+### Validation
+
+- Recorded an opt-in HAOS 18.2/Core 2026.8.3 live-provider check against the exact
+  `v0.1.0-beta.1` component bytes: one paid Gemini/Sulafat `generate_file` request and
+  one catalog-confirmed free Deepgram Flux `tts.speak` request through a controlled
+  one-fetch media-player sink. Audio structure, `/local` retrieval, cleanup, restart,
+  and credential-pattern scans passed.
+
 ## [0.1.0-beta.1] - 2026-08-29
 
 ### Added

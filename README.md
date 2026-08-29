@@ -428,7 +428,7 @@ catalog without generating audio. Its optional generation switch sends exactly o
 model; otherwise it sends no generation request. It never selects a paid or unknown-cost
 model as a fallback.
 
-Latest recorded verification for the 2026-08-29 `v0.1.0-beta.1` release candidate:
+Latest recorded verification for the published 2026-08-29 `v0.1.0-beta.1` source:
 
 - The local mock suite passed all 193 tests on Python 3.14.4 with 88.57%
   branch-enabled combined coverage. Ruff lint, Ruff formatting, and strict mypy checks
@@ -440,14 +440,20 @@ Latest recorded verification for the 2026-08-29 `v0.1.0-beta.1` release candidat
 - On HAOS 18.2 with Core 2026.8.3, the isolated test path passed a new installation,
   invalid-key handling, options and restart persistence, catalog refresh, 24 kHz/16-bit/
   mono WAV file generation, `/local` retrieval, and `tts.speak` MP3 media-source fetch.
-- Config-entry reload, generated-file deletion, integration removal, and a credential
-  pattern log scan also passed on that HAOS test path. Home Assistant core retained the
-  complete non-sensitive `Test.` text while reporting a deliberately encountered
-  pre-fix TTS error, confirming the cache/trace/log privacy limitation documented above.
-  Runtime reauthentication, an invalid model/voice submission through the HAOS UI, and
-  `tts.clear_cache` were not exercised. The public repository's HACS validation passed.
-  No real OpenRouter API call has been made, and the live smoke workflow has not been
-  run.
+- A post-publication opt-in HAOS test used the exact release component bytes for two live
+  provider requests. `generate_file` used Gemini 3.1 Flash TTS Preview with `Sulafat` and
+  returned a 78,764-byte, 24 kHz, 16-bit, mono WAV; mode 0600 storage and unauthenticated
+  `/local` HTTP retrieval both passed. `tts.speak` used the catalog-confirmed
+  `deepgram/flux-tts:free` model and a temporary one-fetch MPD sink; the full media-source
+  resolution and GET returned a 9,936-byte, 24 kHz mono MP3. No physical speaker was
+  exercised.
+- Key usage moved from USD 0 to USD 0.001683 across those two requests, consistent with
+  the paid request and no separately observed free-model charge. This one observation is
+  not a price guarantee. Both test messages were short and non-sensitive. The saved
+  audio, TTS cache, catalog, temporary player, and config entry were removed; Core was
+  restarted, and post-cleanup credential-pattern scans of Home Assistant storage and
+  logs found no key. Runtime reauthentication and an invalid model/voice submission
+  through the HAOS UI remain unexercised.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
