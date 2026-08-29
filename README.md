@@ -445,9 +445,9 @@ Latest recorded verification for the 2026-08-29 `v0.1.0-beta.1` release candidat
   complete non-sensitive `Test.` text while reporting a deliberately encountered
   pre-fix TTS error, confirming the cache/trace/log privacy limitation documented above.
   Runtime reauthentication, an invalid model/voice submission through the HAOS UI, and
-  `tts.clear_cache` were not exercised. HACS validation must be rerun after the remote
-  repository exists. No real OpenRouter API call has been made, and the live smoke
-  workflow has not been run.
+  `tts.clear_cache` were not exercised. The public repository's HACS validation passed.
+  No real OpenRouter API call has been made, and the live smoke workflow has not been
+  run.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.

@@ -17,7 +17,7 @@ Status as of 2026-08-29 for the `v0.1.0-beta.1` release candidate:
 | Minimum-version compatibility | Home Assistant 2025.12.5 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:9a5a3eb4a213dfb25932dee9dc6815c9305f78cecb5afa716fa2483163d8fb5b`. |
 | Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
 | hassfest | Repository | Passed | Official validation reported 0 invalid integrations. |
-| HACS validation | Repository | Not run | The validator returned HTTP 404 because the remote GitHub repository does not exist yet; rerun after repository creation. |
+| HACS validation | Public repository | Passed | The pinned HACS validation action completed successfully in the first public [Quality run](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33239859740). |
 | HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The mock-backed path passed install, flows, restart persistence, refresh, file generation/retrieval/deletion, `tts.speak`, reload, and removal. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
 | OpenRouter live smoke | Manual workflow | Not run | Use a temporary secret only after release-candidate approval; generation is optional and verified-free only. |
 | Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
@@ -160,11 +160,11 @@ Local: Python 3.14.4; 193 passed; branch-enabled combined coverage 88.57%; Ruff/
 Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 Docker stable: HA Core 2026.8.3; lifecycle and host-UID bind-mount save/read(0600)/delete passed
 hassfest: passed; 0 invalid integrations
-HACS validation: not run; remote repository absence caused HTTP 404
+HACS validation: passed in public GitHub Actions Quality run 33239859740
 HAOS: 18.2 / Core 2026.8.3; mock-backed checklist passed except the explicit gaps above
 Live OpenRouter: not run
 Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: HACS validation, live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain
+Known failures/skips: live API, HAOS runtime reauthentication/invalid-pair UI exercise, and `tts.clear_cache` remain
 ```
 
 For later candidates, copy the template below and replace every placeholder:
