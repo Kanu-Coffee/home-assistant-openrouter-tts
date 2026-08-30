@@ -22,8 +22,9 @@ specific appliance or automation.
 
 - UI setup through a Home Assistant Config Flow, including API-key validation and
   reauthentication.
-- A dynamic catalog limited to models for which audio output and supported voices can
-  be established from the current OpenRouter metadata.
+- A dynamic catalog limited to models for which audio output and a usable voice mode can
+  be established from current OpenRouter metadata, with one narrowly scoped compatibility
+  adapter for a documented provider-default voice.
 - Atomic model and voice selection, configurable speed, and a conservative
   **All voice models / Confirmed free only** filter.
 - A Home Assistant TTS entity for `tts.speak`.
@@ -54,7 +55,24 @@ request will succeed.
 
 ### HACS custom repository
 
-Until this project is listed in the default HACS catalog, add it as a custom repository:
+Until this project is listed in the default HACS catalog, add it as a custom repository.
+These methods follow the official [HACS custom-repository instructions](https://hacs.xyz/docs/faq/custom_repositories/)
+and [My Home Assistant link documentation](https://hacs.xyz/docs/use/my/):
+
+**One-click custom repository**
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Kanu-Coffee&repository=home-assistant-openrouter-tts&category=integration)
+
+The button above uses the official My Home Assistant `hacs_repository` link and opens
+this repository in HACS with the **Integration** category pre-filled. HACS must already
+be installed. If the redirect cannot reach your Home Assistant instance, use the manual
+HACS steps below. The link works for custom repositories; it does not mean this project
+is listed in HACS's default catalog.
+
+After the repository opens, select **Download**, restart Home Assistant, and add
+**OpenRouter TTS** under **Settings → Devices & services → Add integration**.
+
+**Manual HACS steps**
 
 1. Open HACS in Home Assistant and select **Integrations**.
 2. Open the menu in the upper-right corner and select **Custom repositories**.
@@ -97,7 +115,7 @@ Flow and change:
 | --- | --- |
 | Model display scope | Show all confirmed voice models, or only models conservatively classified as free. |
 | Model | Default model used for speech generation. |
-| Voice | A voice confirmed for the selected model. |
+| Voice | An advertised voice confirmed for the selected model, or a clearly labeled provider-default mode for an explicitly supported compatibility adapter. |
 | Speed | Requested speech speed. `1.0` may be omitted from the upstream request for compatibility. Models without confirmed or adapted speed support are not sent this field. |
 | Storage root | Root directory for saved announcement files. The default is `/config/www/audio/tts`. |
 | Refresh catalog | Discard the current catalog TTL for this update and fetch fresh capability, voice, availability, and pricing metadata. |
@@ -114,7 +132,9 @@ can still fail if OpenRouter or the upstream provider no longer serves that mode
 
 **Confirmed free only** is intentionally conservative:
 
-- A candidate must first have confirmed audio-output capability and supported voices.
+- A candidate must first have confirmed audio-output capability and either nonempty
+  advertised voices or an exact-model compatibility adapter whose provider-default
+  voice behavior is documented and tested.
 - An official `:free` suffix is recognized as a free-variant signal, but it does not
   override missing, ambiguous, conditional, or explicitly positive price metadata.
 - Otherwise, all pricing fields relevant to TTS must be present, understandable, and
@@ -134,6 +154,39 @@ unchanged; return to **All voice models** to continue.
 > guarantee. OpenRouter or a routed provider may change pricing, rate limits, routing,
 > or availability between catalog refresh and generation. Review current pricing in
 > OpenRouter before relying on the filter.
+
+### Fish Audio S2.1 Pro Free
+
+Version 0.2.0 adds an exact-model compatibility adapter for
+`fish-audio/s2.1-pro-free:free`. OpenRouter currently identifies this exact model as
+text-to-speech and reports zero pricing, but its catalog currently returns
+`supported_voices: null`. When that key is explicitly present with a `null` value, the
+integration therefore exposes one UI choice, **Provider default voice**, only for this
+exact model and omits the `voice` field from the speech request. A missing voice key, an
+empty voice list, another Fish model, or any other model remains excluded.
+
+**Provider default voice** is not a named or pinned voice. Fish Audio chooses the voice
+used for the request. Its identity, timbre, language behavior, and continued availability
+may change upstream without an integration release. Version 0.2.0 does not expose Fish
+reference IDs, uploaded voice samples, or voice cloning through the Home Assistant UI.
+
+The current catalog does not advertise speed support for this model, so the integration
+does not send `speed` upstream even though Home Assistant retains a default speed option.
+It will send speed only if explicit capability metadata supports doing so.
+
+This exception follows OpenRouter's requirement that `voice` may be omitted only when
+the provider documents a default, together with Fish Audio's documentation that its
+voice-less examples use the default voice. See the official
+[OpenRouter model page](https://openrouter.ai/fish-audio/s2.1-pro-free:free),
+[OpenRouter TTS guide](https://openrouter.ai/docs/guides/overview/multimodal/tts), and
+[Fish Audio quick start](https://docs.fish.audio/developer-guide/getting-started/quickstart).
+
+> [!WARNING]
+> The **(Free)** label is a point-in-time classification from the current catalog, not
+> a billing contract. OpenRouter describes this variant as intended for testing,
+> prototyping, and low-volume use without production latency or availability guarantees.
+> Refresh the catalog and review the current model page, pricing, and rate limits before
+> every material workload.
 
 ### Reauthentication
 
@@ -346,8 +399,12 @@ files, because those files may still be referenced by your automations.
 ### No models or voices are shown
 
 Refresh the catalog, switch the display scope to **All voice models**, and verify current
-OpenRouter model metadata. Models without confirmed audio output and voices are excluded;
-unknown pricing is also excluded from **Confirmed free only**.
+OpenRouter model metadata. Models without confirmed audio output and usable voice metadata
+are excluded; unknown pricing is also excluded from **Confirmed free only**. The sole
+current exception is the exact `fish-audio/s2.1-pro-free:free` adapter described above:
+it requires an explicitly present `supported_voices: null` and exposes only the provider
+default voice. It remains excluded entirely if its capability/adapter checks fail, and
+is excluded from **Confirmed free only** if its conservative price checks fail.
 
 ### The key is accepted but generation fails
 
@@ -361,6 +418,10 @@ include a `Retry-After` delay; a 5xx response indicates a transient upstream fai
 Refresh the catalog and choose a currently valid model/voice pair in Configure. Providers
 may remove voices or capabilities. The previous selection is retained rather than silently
 changed, but it may no longer generate audio.
+
+For Fish S2.1 Pro Free, **Provider default voice** identifies request behavior, not a
+specific voice. A change in the resulting voice can be an upstream provider change even
+when the UI selection is unchanged.
 
 ### Speed appears to have no effect
 
@@ -428,16 +489,27 @@ catalog without generating audio. Its optional generation switch sends exactly o
 model; otherwise it sends no generation request. It never selects a paid or unknown-cost
 model as a fallback.
 
-Latest recorded verification as of 2026-08-30 covers the published
-`v0.1.0-beta.1` baseline and the `v0.1.0-beta.2` release candidate:
+Version 0.2.0 adds the exact Fish provider-default adapter described above. Its final
+source passed the mock/static checks, declared-minimum and current-stable Docker checks,
+hassfest, and a zero-generation HAOS UI/lifecycle pass summarized below. The pushed tag is
+created only after its required GitHub HACS/quality workflows pass. See
+[docs/TESTING.md](docs/TESTING.md) for the complete evidence and explicit gaps; older beta
+results remain historical rather than being silently attributed to v0.2.0.
 
-- The local mock suite passed all 194 tests on Python 3.14.4 with 88.57%
+- The v0.2.0 local mock suite passed all 212 tests on Python 3.14.4 with 89.26%
   branch-enabled combined coverage. Ruff lint, Ruff formatting, and strict mypy checks
   also passed.
-- Home Assistant Core 2025.12.5 and 2026.8.3 Docker checks both passed integration import
+- Home Assistant Core 2025.12.0 and 2026.8.3 Docker checks both passed integration import
   and config-entry setup → unload → setup. On both versions, a host-UID-owned mode-0755
   config bind mount also passed actual save/read as mode 0600 and deletion. Hassfest
   reported zero invalid integrations.
+- On HAOS 18.2/Core 2026.8.3, the final v0.2.0 component bytes exposed Fish with a Free
+  label and the localized provider-default selector, committed Fish + voice + `free_only`
+  atomically, survived a real Core restart, returned a fresh manual catalog refresh,
+  passed explicit unload/reload, and loaded the TTS entity. This pass permitted only
+  OpenRouter key/catalog/endpoint GETs, reported speech-generation requests 0 and meter
+  delta 0, and ended with zero entry/store/audio/token/credential-pattern counts, a final
+  Core restart, empty backup/snapshot lists, and VM shutdown.
 - On HAOS 18.2 with Core 2026.8.3, the isolated test path passed a new installation,
   invalid-key handling, options and restart persistence, catalog refresh, 24 kHz/16-bit/
   mono WAV file generation, `/local` retrieval, and `tts.speak` MP3 media-source fetch.
@@ -458,7 +530,8 @@ Latest recorded verification as of 2026-08-30 covers the published
   credential-pattern scans of Home Assistant storage and logs found no key. Runtime
   reauthentication and an invalid model/voice submission through the HAOS UI remain
   unexercised. The temporary upstream key must still be revoked by its owner.
-- The 2026-08-30 catalog snapshot had exactly one conservatively eligible free TTS model,
+- Under the beta.2 advertised-voice rule, the 2026-08-30 catalog snapshot had exactly one
+  conservatively eligible free TTS model,
   `deepgram/flux-tts:free`, with 36 advertised voices. Speed was not advertised as
   supported and was omitted from every request. The free-only live matrix was capped at
   exactly five generation attempts:
@@ -479,6 +552,20 @@ Latest recorded verification as of 2026-08-30 covers the published
   `tts.speak` path remains the latest evidence for that service. All local artifacts from
   the current run were removed. Revocation of the temporary upstream key remains an
   owner action.
+- A separate 2026-08-30 Fish compatibility investigation made exactly ten generation
+  attempts against `fish-audio/s2.1-pro-free:free`: nine succeeded and one explicit
+  public reference-ID request returned HTTP 400 without retry. All eight requests that
+  used the provider default succeeded across direct MP3/PCM and controlled HAOS
+  `generate_file` MP3/WAV and `tts.speak` paths. Successful direct responses were
+  44.1 kHz mono; PCM was wrapped and validated as 16-bit mono WAV. Generation metadata
+  identified Fish Audio and reported zero cost/usage, and the key meter showed no delta
+  after observation. This used a temporary exact-model test adapter, not the final v0.2.0
+  release revision, and did not exercise a physical speaker. Final-source mock tests
+  separately verify that both `voice` and unsupported `speed` are omitted, while the
+  final-source HAOS pass verified UI/lifecycle behavior without an eleventh generation.
+  The ten-call probe demonstrates provider
+  behavior at that time, not future price, latency, availability, voice identity, or
+  future release correctness.
 - Gitleaks found no secret in the complete local Git history, explicit OpenRouter-key and
   bearer-token pattern checks found no credential, and Trivy reported no unfixed high or
   critical production dependency finding.
@@ -490,8 +577,8 @@ Latest recorded verification as of 2026-08-30 covers the published
   `cryptography>=50.0.0`. This dismissal does not replace Home Assistant security updates.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
-[CHANGELOG.md](CHANGELOG.md). The current verification matrix, including pending checks,
-is maintained in [docs/TESTING.md](docs/TESTING.md).
+[CHANGELOG.md](CHANGELOG.md). The current verification matrix, including explicit gaps
+and checks that were not run, is maintained in [docs/TESTING.md](docs/TESTING.md).
 
 ## 한국어 요약
 
@@ -502,6 +589,11 @@ OpenRouter TTS는 OpenRouter의 음성 모델을 Home Assistant `tts.speak` 및 
 - 음성 생성 문장은 OpenRouter와 선택된 모델 공급자에게 외부 전송됩니다.
 - 무료 표시는 마지막 카탈로그 조회 시점의 보수적 판정이며 실제 무료 사용이나
   향후 가격을 보장하지 않습니다.
+- v0.2.0은 정확한 모델 ID `fish-audio/s2.1-pro-free:free`에 한해서 카탈로그의
+  `supported_voices`가 명시적으로 `null`일 때 **공급자 기본 음성**을 UI에 표시합니다.
+  이 선택은 고정된 이름의 음성이 아니며 요청에서 `voice`를 생략해 Fish Audio가
+  기본 음성을 선택하게 합니다. 현재 speed 지원 메타데이터도 없어 speed를 전송하지
+  않습니다. 다른 모델이나 누락/빈 voice 메타데이터에는 이 예외를 적용하지 않습니다.
 - API 키가 유효해도 잔액, 모델 권한, 공급자 가용성은 보장되지 않습니다.
 - 기본 저장 경로 `/config/www/audio/tts`는 `/local/audio/tts/...`로 노출됩니다.
   `/config/www`의 파일은 URL을 아는 네트워크 사용자가 인증 없이 가져갈 수 있으므로
@@ -509,8 +601,10 @@ OpenRouter TTS는 OpenRouter의 음성 모델을 Home Assistant `tts.speak` 및 
   생성 후 `/local` 경로 등록을 위해 한 번 재시작해야 할 수 있습니다.
 - 설치는 HACS의 사용자 저장소에
   `https://github.com/Kanu-Coffee/home-assistant-openrouter-tts`를 Integration 유형으로
-  추가하거나, 릴리스의 `custom_components/openrouter_tts` 폴더를
-  `/config/custom_components/` 아래에 복사한 뒤 Home Assistant를 재시작하면 됩니다.
+  추가하면 됩니다. 위 HACS 설치 절의 **My Home Assistant 버튼**을 누르면 동일한
+  저장소와 유형이 미리 입력됩니다. 또는 릴리스의
+  `custom_components/openrouter_tts` 폴더를 `/config/custom_components/` 아래에
+  복사한 뒤 Home Assistant를 재시작하면 됩니다.
 - 고정 파일은 `openrouter_tts.generate_file`, 카탈로그 갱신은
   `openrouter_tts.refresh_catalog`, 안전한 정리는 `openrouter_tts.delete_file` 서비스를
   사용하세요. 세 서비스는 관리자 전용입니다.

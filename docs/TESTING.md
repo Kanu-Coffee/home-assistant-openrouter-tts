@@ -7,25 +7,25 @@ skipped checks visible.
 
 ## Current release status
 
-Status as of 2026-08-30 for the `v0.1.0-beta.2` release candidate. Results inherited from
-the published `v0.1.0-beta.1` baseline are explicitly dated below:
+Status as of 2026-08-30 for the final `v0.2.0` source candidate. Earlier beta results
+remain below as historical evidence and are kept separate from final-source validation:
 
 | Area | Target | Status | Evidence or next action |
 | --- | --- | --- | --- |
-| Mock unit/integration suite | Python 3.14.4 local environment | Passed | 194 passed. Branch-enabled combined coverage: 88.57%. |
-| Ruff | Python source and tests | Passed | `ruff check` and `ruff format --check` both passed on the final local candidate. |
-| Mypy | Integration package | Passed | Strict package type checking completed without an issue. |
-| Minimum-version compatibility | Home Assistant 2025.12.5 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:9a5a3eb4a213dfb25932dee9dc6815c9305f78cecb5afa716fa2483163d8fb5b`. |
-| Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | Import and config-entry setup → unload → setup passed. A host-UID-owned mode-0755 `/config` bind mount also passed real save/read as mode 0600 and deletion. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
-| hassfest | Repository | Passed | Official validation reported 0 invalid integrations. |
-| HACS validation | Public repository | Passed | The pinned HACS validation action completed successfully in the first public [Quality run](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33239859740). |
-| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3 | Passed with gaps below | The 2026-08-29 release-byte path passed real Config/Options flows, catalog refresh, paid file generation, verified-free `tts.speak`, cleanup, and restart. The 2026-08-30 candidate passed free Flux MP3 `generate_file` and `/local` retrieval after the identity-header change. Runtime reauthentication and a deliberately invalid Options pair were not exercised on the VM. |
-| OpenRouter live provider | Direct and HAOS opt-in tests; manual workflow not used | Passed with scoped gaps below | The 2026-08-30 catalog exposed one eligible free TTS model with 36 voices. Exactly five generation attempts were made; two pre-change HAOS calls failed, two direct calls returned valid zero-cost MP3s, and the final identity-header HAOS call passed. WAV and `tts.speak` were not repeated after the hard cap. Details and the separate 2026-08-29 evidence are below. |
-| Secret scan | Tracked files and Git history | Passed | Gitleaks 8.30.1 scanned the complete candidate history with no leak; explicit OpenRouter-key and literal bearer-token patterns found no credential. Trivy 0.74.0 reported zero unfixed high/critical production dependency findings. |
+| Mock unit/integration suite | Final v0.2.0 source and locked Python environment | Passed | 212 tests passed. Branch-enabled combined coverage: 89.26%. No real OpenRouter key was used by the suite. |
+| Ruff | Final v0.2.0 Python source and tests | Passed | `ruff check` and `ruff format --check` both passed. |
+| Mypy | Final v0.2.0 integration package | Passed | Strict package type checking completed without an issue. |
+| Minimum-version compatibility | Home Assistant 2025.12.0 container | Passed | Import, service/resource parsing, setup → unload → setup, and host-UID mode-0755 bind-mount save/read (mode 0600)/delete passed. Image digest: `sha256:8951fcbb794da8f261e1639c668639bc90f9520b48099b5715f6d5fbfef08a0e`. |
+| Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | The same lifecycle and secure-storage checks passed. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
+| hassfest | Final v0.2.0 repository | Passed | Local official validation reported one integration and zero invalid integrations. |
+| HACS validation | Final public repository revision | Pending post-push | The My Home Assistant badge and redirect returned HTTP 200 with the intended owner/repository/category. The pinned HACS action must pass on the pushed release revision before tagging. |
+| HAOS end-to-end | HAOS 18.2 / Core 2026.8.3, final v0.2.0 component bytes | Passed with explicit generation gap | Config Flow exposed Fish as free and the provider-default voice, Options committed `free_only` atomically, one real Core restart preserved settings, manual refresh returned a fresh catalog, explicit entry reload passed, and the TTS entity loaded. Cleanup, final Core restart, zero entry/store/audio/token/credential-pattern counts, empty backup/snapshot lists, and VM shutdown passed. This final-source run intentionally made zero speech POSTs. |
+| OpenRouter live provider | `fish-audio/s2.1-pro-free:free`, direct and controlled HAOS paths | Passed provider behavior; final-source generation not repeated | Exactly 10 point-in-time attempts produced 9 successes; all 8 provider-default calls passed and one explicit public reference ID returned HTTP 400 without retry. Metadata/meter observations were zero-cost. The cap was already consumed, so final v0.2.0 bytes were validated with catalog/key GETs and mock wire assertions, not another generation POST. |
+| Secret scan | Final tracked worktree and complete Git history | Passed locally; repeat after commits | Gitleaks 8.30.1 found no leak in the worktree or 17-commit history. Explicit long key/bearer and private-address checks found zero tracked files; no audio remained. Trivy found no secret in the production component, whose manifest declares no runtime package requirements. Repeat after the release commits. |
 | Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
-Do not change **Pending**, **In progress**, or **Not run** to **Passed** until the named
-check has completed successfully on the candidate revision.
+The HACS and secret rows are repeated after the release commits are pushed; tagging is
+blocked until the exact public revision's required workflows pass.
 
 ## Current mock test scope
 
@@ -35,17 +35,20 @@ scope, not the outcome of the next full run:
 - `test_pricing.py`: `:free`, complete zero-price, positive-price, missing, null,
   malformed, conditional, and future pricing fields.
 - `test_catalog.py`: capability/voice parsing, availability, filtering, TTL/persistence,
-  stale last-known-good behavior, refresh, disappeared models/voices, and price changes.
+  stale last-known-good behavior, refresh, disappeared models/voices, price changes, and
+  the exact Fish `supported_voices: null` adapter without widening the exception to a
+  missing key, empty list, other Fish model, or unrelated model.
 - `test_audio.py`: MP3, WAV, raw PCM conversion, MIME/magic mismatches, malformed data,
   and response-size limits.
 - `test_storage.py`: lexical path checks, absolute paths, traversal, symlink escape,
   encoded URLs, overwrite protection, deletion, trusted ownership/mode checks, staging
   permissions, directory-identity races, and atomic publish.
 - `test_api.py`: authentication/access/validation/rate-limit/server statuses, separated
-  timeout errors, bounded bodies, `Retry-After`, request fields, and sensitive-data
-  redaction.
+  timeout errors, bounded bodies, `Retry-After`, request fields, Fish provider-default
+  `voice`/unsupported `speed` omission, and sensitive-data redaction.
 - `test_config_flow.py`: setup, invalid credentials, reauthentication, Options Flow,
-  empty-free-filter behavior, and atomic model/voice validation.
+  empty-free-filter behavior, exact Fish provider-default UI labeling, and atomic
+  model/voice validation.
 - `test_init.py`: config-entry setup/unload and administrator service registration,
   schemas, responses, reauthentication, and safe error mapping.
 - `test_tts.py`: TTS entity properties, speech generation, option forwarding, and
@@ -115,6 +118,34 @@ repository.
   Home Assistant core did record the complete non-sensitive `Test.` input while reporting
   the pre-fix TTS-engine-name failure, demonstrating the documented core privacy limit.
 
+The checked items above describe the earlier beta runs. The following v0.2.0 delta was
+checked separately against the final component bytes:
+
+- [x] Confirm `fish-audio/s2.1-pro-free:free` appears in both **All voice models** and
+  **Confirmed free only** only when the catalog explicitly contains
+  `supported_voices: null` and the required speech/price metadata.
+- [x] Confirm the UI shows the localized provider-default option, saves the
+  exact model/pseudo-voice pair atomically, and preserves it through restart,
+  unload/reload, catalog refresh, and Options Flow.
+- [x] Confirm final-source mock wire tests omit both `voice` and unsupported `speed`, and
+  reject forged sentinels and null/missing/empty metadata outside the exact adapter.
+- [ ] Repeat a live final-source `generate_file` or `tts.speak` request. **Not run:** the
+  user-approved ten-attempt Fish cap had already been consumed. The separate live probe
+  below remains the provider-behavior evidence; no eleventh generation was sent.
+- [x] Remove the catalog store and test entry, revoke the test refresh token, restart
+  Core, and confirm zero entry/store/audio/credential-pattern counts without recording
+  credentials, messages, private URLs, or entity IDs.
+- [x] Open the README My Home Assistant badge and confirm it targets owner
+  `Kanu-Coffee`, repository `home-assistant-openrouter-tts`, category `integration`.
+
+The final-source HAOS harness permitted only OpenRouter `GET /key`, speech-catalog GET,
+and exact-model endpoint GET requests. It reported speech-generation requests 0 and an
+unchanged key meter after 60 seconds. The deployed component tree matched the local
+candidate byte for byte. Backups and libvirt snapshots remained at zero, and the VM was
+shut down after cleanup. A physical speaker, runtime reauthentication, and an invalid-pair
+UI submission remain not run on this final-source pass; their mock or earlier-beta
+coverage is recorded separately.
+
 ### 2026-08-29 baseline live path
 
 The initial HAOS checks used an isolated mock path. A later direct opt-in check used the
@@ -150,10 +181,11 @@ attempted during that failure.
 
 ### 2026-08-30 verified-free matrix
 
-The refreshed OpenRouter catalog contained exactly one model that met all conservative
-free-TTS eligibility requirements: `deepgram/flux-tts:free`, with 36 nonempty advertised
-voices. Its metadata did not advertise speed support, so the integration omitted the
-speed field. No paid or unknown-price model was used.
+Under the beta.2 rule that required nonempty advertised voices, the refreshed OpenRouter
+catalog contained exactly one conservatively eligible free TTS model:
+`deepgram/flux-tts:free`, with 36 advertised voices. Its metadata did not advertise speed
+support, so the integration omitted the speed field. No paid or unknown-price model was
+used.
 
 The run was limited to exactly five generation attempts. Every row below represents one
 generation POST; neither the integration nor the harness automatically retried it.
@@ -181,6 +213,53 @@ or `tts.speak` request. The verified-free Flux `tts.speak` media-source flow pas
 2026-08-29 as recorded above. All local test artifacts from the current run were removed.
 The temporary upstream key still must be revoked by its owner.
 
+### 2026-08-30 Fish exact-model compatibility probe
+
+OpenRouter's current catalog identified `fish-audio/s2.1-pro-free:free` as text input and
+speech output with explicit zero pricing, but returned `supported_voices: null` and no
+advertised speed parameter. OpenRouter documents that `voice` may be omitted only for a
+provider with a documented default, and Fish Audio's quick start identifies its
+voice-less examples as using the default voice. A temporary, exact-ID test adapter
+therefore exposed one provider-default pseudo voice and omitted both `voice` and `speed`
+on the wire. It did not accept a missing voice key, an empty list, another Fish model, or
+another model with null metadata.
+
+The run reserved and enforced exactly ten generation attempts. It did not automatically
+retry any failed generation request:
+
+| Attempt | Path and voice mode | Result |
+| --- | --- | --- |
+| 1 | Direct, provider default, English MP3 | Passed: valid 35,943-byte, 44.1 kHz mono MP3. |
+| 2 | Direct, one public Fish reference ID, MP3 | HTTP 400; no response body or reference ID retained, and no retry. |
+| 3 | Direct, a different public Fish reference ID, MP3 | Passed: valid 32,181-byte, 44.1 kHz mono MP3. This does not establish a supported product voice list. |
+| 4 | Direct, provider default, response format omitted | Passed: raw PCM normalized to a valid 167,980-byte, 44.1 kHz, 16-bit mono WAV. |
+| 5 | Direct, provider default, numeric/punctuation text, PCM | Passed: valid 413,740-byte, 44.1 kHz, 16-bit mono WAV. |
+| 6 | Direct, provider default, Korean MP3 | Passed: valid 41,794-byte, 44.1 kHz mono MP3. |
+| 7 | Direct, provider default, expressive mixed-language MP3 | Passed: valid 66,454-byte, 44.1 kHz mono MP3. |
+| 8 | HAOS, provider default, `generate_file` MP3 | Passed: saved file and `/local` retrieval both validated. |
+| 9 | HAOS, provider default, Korean `generate_file` WAV/PCM | Passed: saved WAV structure and `/local` retrieval both validated. |
+| 10 | HAOS, provider default, `tts.speak` | Passed through a controlled media-player sink that fetched the TTS proxy exactly once. |
+
+The outcome was 9 successes and one HTTP 400. All eight provider-default requests
+succeeded. Successful direct generation records identified the exact model and Fish
+Audio provider and reported total cost/usage 0. The key usage and remaining values had
+delta 0 through a final 60-second observation. Those facts are a point-in-time
+observation, not a guarantee of free future use; OpenRouter describes this variant as
+low-volume/testing use without production latency or availability guarantees.
+
+No physical Chromecast or speaker was exercised. The public reference-ID success is not
+used by the product and does not justify advertising arbitrary Fish voices. The HAOS
+entry, audio files, `/local` artifacts, TTS cache, catalog store, temporary sink, test
+overlay, and local credential material were removed; Core was restored and the VM was
+shut down. The credential owner must still revoke the temporary upstream key. Final
+v0.2.0 UI, atomic-options, restart, refresh, reload, cleanup, and mock wire behavior were
+subsequently validated as described above; live generation was intentionally not repeated
+after the ten-call cap.
+
+Official references: [OpenRouter model page](https://openrouter.ai/fish-audio/s2.1-pro-free:free),
+[OpenRouter TTS guide](https://openrouter.ai/docs/guides/overview/multimodal/tts), and
+[Fish Audio quick start](https://docs.fish.audio/developer-guide/getting-started/quickstart).
+
 ## Manual OpenRouter smoke test
 
 `.github/workflows/live-smoke.yml` is `workflow_dispatch` only and reads the
@@ -189,7 +268,8 @@ default mode validates the key and current catalog without generating speech. If
 operator explicitly enables generation, the script:
 
 1. fetches the live catalog;
-2. requires a conservatively verified free, voice-capable TTS model;
+2. requires a conservatively verified free TTS model with advertised voices or an
+   explicitly supported provider-default adapter;
 3. sends exactly one `Test.` request; and
 4. exits without generation if no such model exists.
 
@@ -218,17 +298,17 @@ records. Use `cache: false`, run `tts.clear_cache`, and remove traces after sens
 Current result log:
 
 ```text
-Revision/tag: v0.1.0-beta.2 release candidate
+Revision/tag: v0.2.0 release source (the tag target is recorded by the GitHub Release)
 Date (Asia/Seoul): 2026-08-30
-Local: Python 3.14.4; 194 passed; branch-enabled combined coverage 88.57%; Ruff/format/mypy passed
-Docker minimum: HA Core 2025.12.5; lifecycle and host-UID bind-mount save/read(0600)/delete passed
-Docker stable: HA Core 2026.8.3; lifecycle and host-UID bind-mount save/read(0600)/delete passed
-hassfest: passed; 0 invalid integrations
-HACS validation: passed in public GitHub Actions Quality run 33239859740
-HAOS: 18.2 / Core 2026.8.3; 2026-08-29 baseline path and 2026-08-30 final identity-header MP3 generate_file passed except the explicit gaps above
-Live OpenRouter: 2026-08-29 paid Gemini generate_file + free Flux tts.speak passed; 2026-08-30 free-only matrix made exactly 5 attempts (2 pre-change HAOS failures, 2 direct zero-cost MP3 passes, 1 identity-header HAOS MP3 pass); /key usage 0.001683 with usage and remaining deltas both 0 over 60 seconds
-Secret scan: Gitleaks 8.30.1 Git history and explicit credential patterns passed; Trivy 0.74.0 high/critical production findings 0
-Known failures/skips: 2026-08-30 WAV and tts.speak were not run after the five-attempt hard cap; temporary-key owner revocation is pending; HAOS runtime reauthentication, invalid-pair UI exercise, and physical-speaker playback remain; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
+Local: Ruff/format/strict mypy passed; 212 pytest cases passed; branch-enabled combined coverage 89.26%
+Docker minimum: HA Core 2025.12.0 passed lifecycle and secure-storage checks; digest sha256:8951fcbb794da8f261e1639c668639bc90f9520b48099b5715f6d5fbfef08a0e
+Docker stable: HA Core 2026.8.3 passed the same checks; digest sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe
+hassfest: passed locally; one integration, zero invalid
+HACS validation: My Home Assistant badge/redirect HTTP 200; pinned action must pass on the exact pushed revision before tagging
+HAOS: final component bytes passed Fish Free/provider-default Config Flow, atomic free_only Options Flow, real restart persistence, fresh manual refresh, explicit reload, TTS entity load, cleanup, final restart, zero credential/artifact counts, and VM shutdown; speech POST count 0
+Live OpenRouter: separate Fish exact-model behavior probe completed exactly 10 attempts: 9 passed, 1 explicit public reference-ID request returned HTTP 400 without retry; all 8 provider-default attempts passed; successful metadata and 60-second meter observation reported zero cost/delta; final-source generation intentionally not repeated after the cap
+Secret scan: Gitleaks 8.30.1 worktree and 17-commit history passed; explicit long key/bearer/private-IP checks and workspace audio count were zero; repeat after release commits
+Known failures/skips: the Fish catalog reports supported_voices null and the provider chooses an unpinned default voice; production latency/availability and future free pricing are not guaranteed; final-source live generation, physical-speaker playback, HAOS runtime reauthentication, and invalid-pair UI exercise were not run; temporary-key owner revocation is pending; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
 For later candidates, copy the template below and replace every placeholder:

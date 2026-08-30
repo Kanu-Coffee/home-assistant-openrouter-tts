@@ -2,15 +2,13 @@
 
 ## Supported versions
 
-Until a stable release exists, security fixes are made on the latest prerelease or the
-default branch only. After stable releases begin, this table will be updated with explicit
-support windows. Users should run the newest patched release compatible with their Home
-Assistant installation.
+Security fixes are made on the latest stable minor release and the default branch. Users
+should run the newest patched release compatible with their Home Assistant installation.
 
 | Version | Supported |
 | --- | --- |
-| Latest release/prerelease | Yes |
-| Older prereleases and development snapshots | No |
+| 0.2.x | Yes |
+| 0.1.x prereleases and development snapshots | No |
 
 ## Report a vulnerability privately
 
