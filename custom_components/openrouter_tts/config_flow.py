@@ -33,6 +33,7 @@ from .const import (
     MODEL_FILTER_ALL,
     MODEL_FILTER_FREE_ONLY,
     NAME,
+    PROVIDER_DEFAULT_VOICE_ID,
 )
 from .exceptions import (
     AccessError,
@@ -139,7 +140,13 @@ class _ModelLabelsMixin:
         for voice in model.voices:
             if voice in model.unavailable_voices and voice != preserve_voice:
                 continue
-            label = voice
+            label = (
+                "공급자 기본 음성"
+                if korean and voice == PROVIDER_DEFAULT_VOICE_ID
+                else "Provider default voice"
+                if voice == PROVIDER_DEFAULT_VOICE_ID
+                else voice
+            )
             if voice in model.unavailable_voices:
                 label += (
                     " (사용 불가 · 유지 전용)"

@@ -18,6 +18,8 @@ from custom_components.openrouter_tts.const import (
     CONF_VOICE,
     DEFAULT_LANGUAGE,
     DOMAIN,
+    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+    PROVIDER_DEFAULT_VOICE_ID,
     SUPPORTED_LANGUAGES,
 )
 from custom_components.openrouter_tts.exceptions import (
@@ -80,7 +82,7 @@ def _entity(
         entry_id="test-entry-id",
         options={
             CONF_MODEL: selected.model_id,
-            CONF_VOICE: "Live Voice",
+            CONF_VOICE: selected.voices[0],
             CONF_SPEED: speed,
         },
         runtime_data=runtime,
@@ -89,6 +91,17 @@ def _entity(
     entity = OpenRouterTTSEntity(hass, entry)
     entity.hass = hass
     return entity, entry, runtime
+
+
+def _fish_model() -> TTSModel:
+    return TTSModel(
+        model_id=FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        name="Fish Audio S2.1 Pro Free",
+        voices=(PROVIDER_DEFAULT_VOICE_ID,),
+        free_status=FreeStatus.FREE,
+        pricing={"prompt": "0", "completion": "0"},
+        provider_default_voice=True,
+    )
 
 
 def test_entity_advertises_languages_and_configured_defaults(
@@ -136,6 +149,47 @@ def test_only_currently_live_voices_are_advertised(hass: HomeAssistant) -> None:
     assert entity.async_get_supported_voices("ko") is None
     runtime.catalog.snapshot = None
     assert entity.async_get_supported_voices("ko") is None
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_name"),
+    [("en", "Provider default voice"), ("ko-KR", "공급자 기본 음성")],
+)
+def test_fish_provider_default_is_advertised_with_localized_name(
+    hass: HomeAssistant,
+    language: str,
+    expected_name: str,
+) -> None:
+    hass.config.language = language
+    entity, _entry, _runtime = _entity(hass, model=_fish_model())
+
+    voices = entity.async_get_supported_voices(language)
+
+    assert voices is not None
+    assert [(voice.voice_id, voice.name) for voice in voices] == [
+        (PROVIDER_DEFAULT_VOICE_ID, expected_name)
+    ]
+
+
+async def test_tts_speak_uses_fish_provider_default_selection(
+    hass: HomeAssistant,
+) -> None:
+    model = _fish_model()
+    entity, _entry, runtime = _entity(hass, model=model, speed=1.5)
+
+    extension, audio = await entity.async_get_tts_audio(
+        "Short Fish provider-default test", "en", {}
+    )
+
+    assert extension == "wav"
+    assert audio == b"validated audio bytes"
+    runtime.client.async_generate_speech.assert_awaited_once_with(
+        text="Short Fish provider-default test",
+        model=model,
+        voice=PROVIDER_DEFAULT_VOICE_ID,
+        speed=1.5,
+        response_format="mp3",
+    )
 
 
 async def test_platform_setup_adds_one_tts_entity(hass: HomeAssistant) -> None:

@@ -14,14 +14,14 @@
       },
       "model": {
         "title": "Choose a speech model",
-        "description": "Only catalog models with explicit speech output and supported voices are listed. Free and price information is a current snapshot, not a cost guarantee.",
+        "description": "Only catalog models with explicit speech output and a confirmed voice mode are listed. The audited Fish Audio s2.1 Pro Free model can use its provider default when supported voices are explicitly null. Free and price information is a current snapshot, not a cost guarantee.",
         "data": {
           "model": "Model"
         }
       },
       "voice": {
         "title": "Choose voice and defaults",
-        "description": "The model and voice are validated and saved together. Files below www are exposed through /local and may be accessible without authentication.",
+        "description": "The model and voice are validated and saved together. Provider default voice means the voice field is omitted from the upstream request. Files below www are exposed through /local and may be accessible without authentication.",
         "data": {
           "voice": "Voice",
           "speed": "Speed",
@@ -45,7 +45,7 @@
       "rate_limited": "OpenRouter rate limited the request. Wait before trying again.",
       "server_error": "OpenRouter or an upstream provider is temporarily unavailable.",
       "invalid_catalog": "OpenRouter returned an invalid model catalog.",
-      "no_tts_models": "No model with confirmed speech output and supported voices was found.",
+      "no_tts_models": "No model with confirmed speech output and a safe voice mode was found.",
       "model_not_found": "The selected model is no longer in this catalog snapshot.",
       "model_voice_mismatch": "The selected voice is not supported by the selected model.",
       "unsafe_path": "The storage path must remain inside the Home Assistant configuration directory and cannot contain unsafe components.",
@@ -82,7 +82,7 @@
       },
       "voice": {
         "title": "Confirm voice and defaults",
-        "description": "All values on this page are validated and saved atomically. A speed field is sent upstream only when explicit capability metadata supports it.",
+        "description": "All values on this page are validated and saved atomically. Provider default voice omits the upstream voice field. A speed field is sent upstream only when explicit capability metadata supports it.",
         "data": {
           "voice": "Voice",
           "speed": "Speed",

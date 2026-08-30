@@ -29,7 +29,7 @@ class AudioCapabilities:
 
 @dataclass(frozen=True, slots=True)
 class TTSModel:
-    """A catalog model proven to support speech output and voices."""
+    """A catalog model proven to support speech output and a safe voice mode."""
 
     model_id: str
     name: str
@@ -41,6 +41,7 @@ class TTSModel:
     available: bool = True
     unavailable_voices: frozenset[str] = frozenset()
     speed_supported: bool = False
+    provider_default_voice: bool = False
 
     @property
     def supports_speed(self) -> bool:
@@ -67,6 +68,7 @@ class TTSModel:
             available=available,
             unavailable_voices=self.unavailable_voices,
             speed_supported=self.speed_supported,
+            provider_default_voice=self.provider_default_voice,
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -87,6 +89,7 @@ class TTSModel:
             "available": self.available,
             "unavailable_voices": sorted(self.unavailable_voices),
             "speed_supported": self.speed_supported,
+            "provider_default_voice": self.provider_default_voice,
         }
 
     @classmethod
@@ -118,6 +121,7 @@ class TTSModel:
                 str(item) for item in value.get("unavailable_voices", [])
             ),
             speed_supported=bool(value.get("speed_supported", False)),
+            provider_default_voice=bool(value.get("provider_default_voice", False)),
         )
 
 

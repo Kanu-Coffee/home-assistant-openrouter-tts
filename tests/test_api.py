@@ -16,8 +16,10 @@ from custom_components.openrouter_tts import api as api_module
 from custom_components.openrouter_tts.api import OpenRouterClient
 from custom_components.openrouter_tts.const import (
     API_KEY_PATH,
+    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
     MAX_INPUT_LENGTH,
     MODELS_PATH,
+    PROVIDER_DEFAULT_VOICE_ID,
     SPEECH_PATH,
 )
 from custom_components.openrouter_tts.exceptions import (
@@ -264,6 +266,71 @@ async def test_generate_speech_accumulates_audio_chunks_and_metadata(
     request = session.requests[0]
     assert request.kwargs["allow_redirects"] is False
     assert request.kwargs["headers"]["Accept-Encoding"] == "identity"
+
+
+async def test_fish_provider_default_omits_voice_from_wire_payload(
+    session: _FakeSession,
+) -> None:
+    """The UI sentinel is validated locally and never serialized upstream."""
+    session.queue(
+        _FakeResponse(body=_mp3_bytes(), headers={"Content-Type": "audio/mpeg"})
+    )
+    model = TTSModel(
+        model_id=FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        name="Fish Audio S2.1 Pro Free",
+        voices=(PROVIDER_DEFAULT_VOICE_ID,),
+        free_status=FreeStatus.FREE,
+        provider_default_voice=True,
+    )
+
+    await _client(session).async_generate_speech(
+        text="Provider default wire test",
+        model=model,
+        voice=PROVIDER_DEFAULT_VOICE_ID,
+        speed=1.5,
+    )
+
+    payload = session.requests[0].kwargs["json"]
+    assert payload == {
+        "model": FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        "input": "Provider default wire test",
+        "response_format": "mp3",
+    }
+    assert "voice" not in payload
+    assert "speed" not in payload
+
+
+@pytest.mark.parametrize(
+    ("model_id", "capability_flag"),
+    [
+        (FISH_AUDIO_S21_PRO_FREE_MODEL_ID, False),
+        ("provider/forged-model", False),
+        ("provider/forged-model", True),
+    ],
+)
+async def test_provider_default_sentinel_forgery_is_rejected_before_post(
+    session: _FakeSession,
+    model_id: str,
+    capability_flag: bool,
+) -> None:
+    """A cache or caller cannot trigger omission without the capability flag."""
+    model = TTSModel(
+        model_id=model_id,
+        name="Untrusted cached model",
+        voices=(PROVIDER_DEFAULT_VOICE_ID,),
+        free_status=FreeStatus.UNKNOWN,
+        provider_default_voice=capability_flag,
+    )
+
+    with pytest.raises(InvalidRequestError):
+        await _client(session).async_generate_speech(
+            text="Do not send this request",
+            model=model,
+            voice=PROVIDER_DEFAULT_VOICE_ID,
+            speed=1.0,
+        )
+
+    assert session.requests == []
 
 
 async def test_generation_forces_identity_content_encoding_on_wire(

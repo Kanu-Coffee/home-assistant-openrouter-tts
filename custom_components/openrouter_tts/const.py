@@ -7,7 +7,7 @@ from typing import Final
 
 DOMAIN: Final = "openrouter_tts"
 NAME: Final = "OpenRouter TTS"
-VERSION: Final = "0.1.0-beta.2"
+VERSION: Final = "0.2.0"
 
 CONF_API_KEY: Final = "api_key"
 CONF_MODEL: Final = "model"
@@ -15,6 +15,11 @@ CONF_VOICE: Final = "voice"
 CONF_SPEED: Final = "speed"
 CONF_STORAGE_ROOT: Final = "storage_root"
 CONF_MODEL_FILTER: Final = "model_filter"
+
+# Internal selector value for a narrowly documented provider-default voice.
+# It must never be sent to OpenRouter as a literal voice identifier.
+PROVIDER_DEFAULT_VOICE_ID: Final = "__openrouter_provider_default__"
+FISH_AUDIO_S21_PRO_FREE_MODEL_ID: Final = "fish-audio/s2.1-pro-free:free"
 
 MODEL_FILTER_ALL: Final = "all"
 MODEL_FILTER_FREE_ONLY: Final = "free_only"

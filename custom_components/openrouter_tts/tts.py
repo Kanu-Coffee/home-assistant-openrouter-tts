@@ -21,6 +21,7 @@ from .const import (
     DOMAIN,
     MAX_SPEED,
     MIN_SPEED,
+    PROVIDER_DEFAULT_VOICE_ID,
     SUPPORTED_LANGUAGES,
 )
 from .exceptions import AccessError, AuthenticationError, OpenRouterTTSError
@@ -46,6 +47,11 @@ class OpenRouterTTSEntity(TextToSpeechEntity):
 
     def __init__(self, hass: HomeAssistant, entry: OpenRouterConfigEntry) -> None:
         self._entry = entry
+        self._provider_default_voice_name = (
+            "공급자 기본 음성"
+            if hass.config.language.casefold().startswith("ko")
+            else "Provider default voice"
+        )
         self._attr_unique_id = entry.entry_id
         self._attr_supported_languages = list(SUPPORTED_LANGUAGES)
         self._attr_supported_options = [CONF_MODEL, CONF_VOICE, CONF_SPEED]
@@ -70,7 +76,14 @@ class OpenRouterTTSEntity(TextToSpeechEntity):
         if model is None or not model.available:
             return None
         voices = [
-            Voice(voice_id=voice, name=voice)
+            Voice(
+                voice_id=voice,
+                name=(
+                    self._provider_default_voice_name
+                    if voice == PROVIDER_DEFAULT_VOICE_ID
+                    else voice
+                ),
+            )
             for voice in model.voices
             if voice not in model.unavailable_voices
         ]

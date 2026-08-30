@@ -12,6 +12,7 @@ from typing import Any
 import aiohttp
 
 from .audio import normalize_audio_response
+from .capabilities import is_provider_default_voice_selection
 from .catalog import parse_catalog_payload
 from .const import (
     API_BASE_URL,
@@ -23,6 +24,7 @@ from .const import (
     MAX_INPUT_LENGTH,
     MODELS_PATH,
     PROJECT_URL,
+    PROVIDER_DEFAULT_VOICE_ID,
     READ_TIMEOUT_SECONDS,
     SPEECH_PATH,
     USER_AGENT,
@@ -238,9 +240,18 @@ class OpenRouterClient:
         payload: dict[str, Any] = {
             "model": model.model_id,
             "input": text,
-            "voice": voice,
             "response_format": requested_format,
         }
+        if voice == PROVIDER_DEFAULT_VOICE_ID:
+            if (
+                not model.provider_default_voice
+                or not is_provider_default_voice_selection(model.model_id, voice)
+            ):
+                raise InvalidRequestError(
+                    "The provider-default voice is not supported by the model"
+                )
+        else:
+            payload["voice"] = voice
         if model.supports_speed and speed != 1.0:
             payload["speed"] = speed
 

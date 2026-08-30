@@ -14,14 +14,14 @@
       },
       "model": {
         "title": "음성 모델 선택",
-        "description": "음성 출력과 지원 voice가 명시적으로 확인된 모델만 표시됩니다. 무료·가격 정보는 현재 조회 결과이며 비용을 보장하지 않습니다.",
+        "description": "음성 출력과 안전한 음성 모드가 확인된 모델만 표시됩니다. 검증된 Fish Audio s2.1 Pro Free 모델은 지원 voice가 명시적으로 null일 때 공급자 기본 음성을 사용할 수 있습니다. 무료·가격 정보는 현재 조회 결과이며 비용을 보장하지 않습니다.",
         "data": {
           "model": "모델"
         }
       },
       "voice": {
         "title": "Voice와 기본값 선택",
-        "description": "모델과 voice를 함께 검증하여 저장합니다. www 아래 파일은 /local로 공개되며 인증 없이 접근될 수 있습니다.",
+        "description": "모델과 voice를 함께 검증하여 저장합니다. 공급자 기본 음성을 선택하면 업스트림 요청에서 voice 필드를 생략합니다. www 아래 파일은 /local로 공개되며 인증 없이 접근될 수 있습니다.",
         "data": {
           "voice": "Voice",
           "speed": "속도",
@@ -45,7 +45,7 @@
       "rate_limited": "OpenRouter 요청 한도에 도달했습니다. 잠시 후 다시 시도하세요.",
       "server_error": "OpenRouter 또는 상위 공급자를 일시적으로 사용할 수 없습니다.",
       "invalid_catalog": "OpenRouter가 잘못된 모델 카탈로그를 반환했습니다.",
-      "no_tts_models": "음성 출력과 지원 voice가 모두 확인된 모델이 없습니다.",
+      "no_tts_models": "음성 출력과 안전한 음성 모드가 확인된 모델이 없습니다.",
       "model_not_found": "선택한 모델이 현재 카탈로그 조회 결과에 없습니다.",
       "model_voice_mismatch": "선택한 voice를 이 모델이 지원하지 않습니다.",
       "unsafe_path": "저장 경로는 Home Assistant 구성 디렉터리 내부여야 하며 안전하지 않은 구성 요소를 포함할 수 없습니다.",
@@ -82,7 +82,7 @@
       },
       "voice": {
         "title": "Voice와 기본값 확인",
-        "description": "이 페이지의 모든 값은 하나의 원자적 작업으로 검증·저장됩니다. 속도 지원이 메타데이터로 확인될 때만 speed 필드를 전송합니다.",
+        "description": "이 페이지의 모든 값은 하나의 원자적 작업으로 검증·저장됩니다. 공급자 기본 음성은 업스트림 voice 필드를 생략합니다. 속도 지원이 메타데이터로 확인될 때만 speed 필드를 전송합니다.",
         "data": {
           "voice": "Voice",
           "speed": "속도",

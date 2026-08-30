@@ -34,7 +34,9 @@ from custom_components.openrouter_tts.const import (
     CONF_STORAGE_ROOT,
     CONF_VOICE,
     DOMAIN,
+    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
     PLATFORMS,
+    PROVIDER_DEFAULT_VOICE_ID,
     SERVICE_DELETE_FILE,
     SERVICE_GENERATE_FILE,
     SERVICE_REFRESH_CATALOG,
@@ -91,14 +93,16 @@ def _entry(
     runtime: object | None = None,
     loaded: bool = False,
     api_key: str = "fake-api-key",
+    model_id: str = "provider/speech-model:free",
+    voice: str = "Live Voice",
 ) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id=DOMAIN,
         data={CONF_API_KEY: api_key},
         options={
-            CONF_MODEL: "provider/speech-model:free",
-            CONF_VOICE: "Live Voice",
+            CONF_MODEL: model_id,
+            CONF_VOICE: voice,
             CONF_SPEED: 1.25,
             CONF_STORAGE_ROOT: hass.config.path("www", "audio", "tts"),
         },
@@ -468,6 +472,41 @@ async def test_generate_file_returns_only_non_sensitive_relative_metadata(
         data=b"validated audio",
         actual_extension="wav",
         overwrite=False,
+    )
+
+
+async def test_generate_file_uses_fish_provider_default_selection(
+    hass: HomeAssistant,
+) -> None:
+    """The administrator service accepts the same validated Fish voice mode."""
+    model = TTSModel(
+        model_id=FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        name="Fish Audio S2.1 Pro Free",
+        voices=(PROVIDER_DEFAULT_VOICE_ID,),
+        free_status=FreeStatus.FREE,
+        pricing={"prompt": "0", "completion": "0"},
+        provider_default_voice=True,
+    )
+    runtime = _service_runtime(snapshot=_snapshot(model))
+    entry = _entry(
+        hass,
+        runtime=runtime,
+        loaded=True,
+        model_id=FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        voice=PROVIDER_DEFAULT_VOICE_ID,
+    )
+
+    response = await integration._handle_generate_file(
+        hass, _generate_call(hass, entry_id=entry.entry_id)
+    )
+
+    assert response["model"] == FISH_AUDIO_S21_PRO_FREE_MODEL_ID
+    runtime.client.async_generate_speech.assert_awaited_once_with(
+        text="Short private sentence",
+        model=model,
+        voice=PROVIDER_DEFAULT_VOICE_ID,
+        speed=1.25,
+        response_format="wav",
     )
 
 

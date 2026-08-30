@@ -16,6 +16,10 @@ from custom_components.openrouter_tts.catalog import (
     parse_catalog_payload,
     validate_model_voice,
 )
+from custom_components.openrouter_tts.const import (
+    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+    PROVIDER_DEFAULT_VOICE_ID,
+)
 from custom_components.openrouter_tts.exceptions import (
     AuthenticationError,
     InvalidCatalogError,
@@ -144,6 +148,84 @@ def test_parse_catalog_requires_text_input_speech_output_and_voices() -> None:
     assert model.supports_speed is True
 
 
+def test_exact_fish_model_uses_provider_default_only_for_explicit_null_voices() -> None:
+    """The audited Fish exception is free, selectable, and has no implied speed."""
+    raw = _raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=None)
+    raw["supported_parameters"] = []
+
+    model = parse_catalog_payload({"data": [raw]})[0]
+
+    assert model.model_id == FISH_AUDIO_S21_PRO_FREE_MODEL_ID
+    assert model.voices == (PROVIDER_DEFAULT_VOICE_ID,)
+    assert model.provider_default_voice is True
+    assert model.free_status is FreeStatus.FREE
+    assert model.supports_speed is False
+    assert TTSModel.from_dict(model.as_dict()) == model
+
+
+def test_provider_default_adapter_is_exact_and_fail_closed() -> None:
+    """Missing, empty, near-match, and non-free sibling metadata never opt in."""
+    missing_voices = _raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=None)
+    missing_voices.pop("supported_voices")
+    payload = {
+        "data": [
+            _raw_model("provider/valid", voices=["Named Voice"]),
+            missing_voices,
+            _raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=[]),
+            _raw_model("fish-audio/s2.1-pro-free", voices=None),
+            _raw_model("fish-audio/s2.1-pro:free", voices=None),
+            _raw_model("provider/forged-sentinel", voices=[PROVIDER_DEFAULT_VOICE_ID]),
+            _raw_model(
+                FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+                voices=[PROVIDER_DEFAULT_VOICE_ID],
+            ),
+        ]
+    }
+
+    models = parse_catalog_payload(payload)
+
+    assert [model.model_id for model in models] == ["provider/valid"]
+    assert all(not model.provider_default_voice for model in models)
+
+
+def test_fish_named_voices_do_not_activate_provider_default_mode() -> None:
+    """If the catalog later advertises voices, normal named-voice handling wins."""
+    model = parse_catalog_payload(
+        {
+            "data": [
+                _raw_model(
+                    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+                    voices=["Catalog Voice"],
+                )
+            ]
+        }
+    )[0]
+
+    assert model.voices == ("Catalog Voice",)
+    assert model.provider_default_voice is False
+
+
+def test_fish_positive_price_remains_visible_but_not_verified_free() -> None:
+    """The adapter never lets the :free suffix override a newly positive price."""
+    model = parse_catalog_payload(
+        {
+            "data": [
+                _raw_model(
+                    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+                    voices=None,
+                    pricing={"prompt": "0", "completion": "0.000001"},
+                )
+            ]
+        }
+    )[0]
+
+    assert model.provider_default_voice is True
+    assert model.free_status is FreeStatus.PAID
+    assert filter_models((model,), free_only=False) == (model,)
+    with pytest.raises(NoFreeModelsError):
+        filter_models((model,), free_only=True)
+
+
 def test_parse_catalog_accepts_explicit_text_to_speech_modality() -> None:
     """The documented compact architecture modality is also supported."""
     raw = _raw_model(
@@ -246,6 +328,36 @@ def test_persisted_recent_catalog_is_loaded_without_network_access() -> None:
     asyncio.run(scenario())
 
 
+def test_persisted_fish_provider_default_capability_is_loaded_from_cache() -> None:
+    """The safe omission capability survives the Home Assistant Store round trip."""
+
+    async def scenario() -> None:
+        fish = parse_catalog_payload(
+            {"data": [_raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=None)]}
+        )[0]
+        writer = CatalogManager(
+            object(), "persisted-fish-entry", _QueuedClient((fish,))
+        )
+        await writer.async_get()
+
+        reader = CatalogManager(
+            object(),
+            "persisted-fish-entry",
+            _QueuedClient(
+                AssertionError("A recent Fish catalog should load from storage")
+            ),
+        )
+        loaded = await reader.async_get()
+        cached = loaded.by_id(FISH_AUDIO_S21_PRO_FREE_MODEL_ID)
+
+        assert cached is not None
+        assert cached.provider_default_voice is True
+        assert cached.voices == (PROVIDER_DEFAULT_VOICE_ID,)
+        assert loaded.stale is True
+
+    asyncio.run(scenario())
+
+
 def test_failed_refresh_uses_last_good_catalog_as_stale() -> None:
     async def scenario() -> None:
         first = (_model("provider/first"),)
@@ -295,6 +407,76 @@ def test_disappeared_selected_model_is_preserved_as_unavailable() -> None:
         assert preserved.available is False
         assert preserved.voices == selected.voices
         assert refreshed.by_id(replacement.model_id) == replacement
+
+    asyncio.run(scenario())
+
+
+def test_disappeared_fish_model_preserves_provider_default_capability() -> None:
+    """The last confirmed adapter survives cache/availability fallback unchanged."""
+
+    async def scenario() -> None:
+        selected = parse_catalog_payload(
+            {"data": [_raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=None)]}
+        )[0]
+        replacement = _model("provider/replacement")
+        manager = CatalogManager(
+            object(),
+            "fish-model-disappearance",
+            _QueuedClient((selected,), (replacement,)),
+        )
+
+        await manager.async_get()
+        refreshed = await manager.async_get(
+            force=True,
+            preserve_model_id=selected.model_id,
+            preserve_voice=PROVIDER_DEFAULT_VOICE_ID,
+        )
+
+        preserved = refreshed.by_id(selected.model_id)
+        assert preserved is not None
+        assert preserved.available is False
+        assert preserved.provider_default_voice is True
+        assert preserved.voices == (PROVIDER_DEFAULT_VOICE_ID,)
+        assert TTSModel.from_dict(preserved.as_dict()) == preserved
+
+    asyncio.run(scenario())
+
+
+def test_fish_capability_change_preserves_selection_but_disables_adapter() -> None:
+    """Explicit named voices supersede, rather than inheriting, the old adapter."""
+
+    async def scenario() -> None:
+        initial = parse_catalog_payload(
+            {"data": [_raw_model(FISH_AUDIO_S21_PRO_FREE_MODEL_ID, voices=None)]}
+        )[0]
+        current = parse_catalog_payload(
+            {
+                "data": [
+                    _raw_model(
+                        FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+                        voices=["Catalog Voice"],
+                    )
+                ]
+            }
+        )[0]
+        manager = CatalogManager(
+            object(),
+            "fish-capability-change",
+            _QueuedClient((initial,), (current,)),
+        )
+
+        await manager.async_get()
+        refreshed = await manager.async_get(
+            force=True,
+            preserve_model_id=initial.model_id,
+            preserve_voice=PROVIDER_DEFAULT_VOICE_ID,
+        )
+
+        preserved = refreshed.by_id(initial.model_id)
+        assert preserved is not None
+        assert preserved.provider_default_voice is False
+        assert preserved.voices == ("Catalog Voice", PROVIDER_DEFAULT_VOICE_ID)
+        assert preserved.unavailable_voices == frozenset({PROVIDER_DEFAULT_VOICE_ID})
 
     asyncio.run(scenario())
 

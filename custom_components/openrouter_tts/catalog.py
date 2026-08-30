@@ -10,8 +10,13 @@ from typing import Any, Protocol
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .capabilities import supports_speed
-from .const import CATALOG_TTL, STORAGE_KEY_PREFIX, STORAGE_VERSION
+from .capabilities import supports_provider_default_voice, supports_speed
+from .const import (
+    CATALOG_TTL,
+    PROVIDER_DEFAULT_VOICE_ID,
+    STORAGE_KEY_PREFIX,
+    STORAGE_VERSION,
+)
 from .exceptions import (
     InvalidCatalogError,
     ModelVoiceMismatchError,
@@ -86,7 +91,7 @@ def _audio_capabilities(raw_model: Mapping[str, Any]) -> AudioCapabilities:
 
 
 def parse_catalog_payload(payload: Mapping[str, Any]) -> tuple[TTSModel, ...]:
-    """Return only models with explicit speech output and non-empty voices."""
+    """Return models with speech output and an explicit safe voice mode."""
     raw_models = payload.get("data")
     if not isinstance(raw_models, list):
         raise InvalidCatalogError("OpenRouter returned a catalog without a model list")
@@ -98,6 +103,14 @@ def parse_catalog_payload(payload: Mapping[str, Any]) -> tuple[TTSModel, ...]:
             continue
         model_id = str(item.get("id", "")).strip()
         voices = _string_sequence(item.get("supported_voices"))
+        provider_default_voice = supports_provider_default_voice(item)
+        if provider_default_voice:
+            voices = (PROVIDER_DEFAULT_VOICE_ID,)
+        else:
+            # The sentinel is an internal control value, never an upstream voice ID.
+            voices = tuple(
+                voice for voice in voices if voice != PROVIDER_DEFAULT_VOICE_ID
+            )
         if not model_id or model_id in seen_ids or not voices:
             continue
         seen_ids.add(model_id)
@@ -120,12 +133,13 @@ def parse_catalog_payload(payload: Mapping[str, Any]) -> tuple[TTSModel, ...]:
                 supported_parameters=supported_parameters,
                 audio=_audio_capabilities(item),
                 speed_supported=supports_speed(model_id, supported_parameters, voices),
+                provider_default_voice=provider_default_voice,
             )
         )
 
     if not models:
         raise InvalidCatalogError(
-            "OpenRouter did not return any model with both speech output and voices"
+            "OpenRouter did not return a speech model with a confirmed voice mode"
         )
     return tuple(models)
 
@@ -290,6 +304,7 @@ class CatalogManager:
                             available=fresh.available,
                             unavailable_voices=frozenset({preserve_voice}),
                             speed_supported=fresh.speed_supported,
+                            provider_default_voice=fresh.provider_default_voice,
                         )
 
             self._snapshot = CatalogSnapshot(

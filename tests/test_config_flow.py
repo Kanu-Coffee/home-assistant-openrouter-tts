@@ -20,8 +20,10 @@ from custom_components.openrouter_tts.const import (
     CONF_STORAGE_ROOT,
     CONF_VOICE,
     DOMAIN,
+    FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
     MODEL_FILTER_ALL,
     MODEL_FILTER_FREE_ONLY,
+    PROVIDER_DEFAULT_VOICE_ID,
 )
 from custom_components.openrouter_tts.exceptions import AuthenticationError
 from custom_components.openrouter_tts.models import (
@@ -47,6 +49,17 @@ def _models() -> tuple[TTSModel, ...]:
             free_status=FreeStatus.FREE,
             pricing={"prompt": "0", "completion": "0"},
         ),
+    )
+
+
+def _fish_model() -> TTSModel:
+    return TTSModel(
+        model_id=FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        name="Fish Audio S2.1 Pro Free",
+        voices=(PROVIDER_DEFAULT_VOICE_ID,),
+        free_status=FreeStatus.FREE,
+        pricing={"prompt": "0", "completion": "0"},
+        provider_default_voice=True,
     )
 
 
@@ -93,6 +106,66 @@ async def test_config_flow_success(hass: HomeAssistant) -> None:
     assert result["options"] == {
         CONF_MODEL: "provider/paid-speech",
         CONF_VOICE: "Sulafat",
+        CONF_SPEED: 1.0,
+        CONF_STORAGE_ROOT: root,
+        CONF_MODEL_FILTER: MODEL_FILTER_ALL,
+    }
+
+
+@pytest.mark.parametrize(
+    ("language", "expected_label"),
+    [("en", "Provider default voice"), ("ko-KR", "공급자 기본 음성")],
+)
+async def test_config_flow_exposes_and_saves_fish_provider_default_atomically(
+    hass: HomeAssistant,
+    language: str,
+    expected_label: str,
+) -> None:
+    """The exact Fish adapter appears as a localized, selectable voice mode."""
+    hass.config.language = language
+    with (
+        patch(
+            "custom_components.openrouter_tts.config_flow.OpenRouterClient.async_validate_key",
+            new=AsyncMock(),
+        ),
+        patch(
+            "custom_components.openrouter_tts.config_flow.OpenRouterClient.async_fetch_catalog",
+            new=AsyncMock(return_value=(_fish_model(),)),
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "fish-test-secret"}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_MODEL: FISH_AUDIO_S21_PRO_FREE_MODEL_ID}
+        )
+
+        voice_selector = next(
+            value
+            for key, value in result["data_schema"].schema.items()
+            if key.schema == CONF_VOICE
+        )
+        assert voice_selector.config["options"] == [
+            {"value": PROVIDER_DEFAULT_VOICE_ID, "label": expected_label}
+        ]
+
+        root = hass.config.path("www", "audio", "tts")
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_VOICE: PROVIDER_DEFAULT_VOICE_ID,
+                CONF_SPEED: 1.0,
+                CONF_STORAGE_ROOT: root,
+            },
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["options"] == {
+        CONF_MODEL: FISH_AUDIO_S21_PRO_FREE_MODEL_ID,
+        CONF_VOICE: PROVIDER_DEFAULT_VOICE_ID,
         CONF_SPEED: 1.0,
         CONF_STORAGE_ROOT: root,
         CONF_MODEL_FILTER: MODEL_FILTER_ALL,
@@ -272,6 +345,40 @@ async def test_options_flow_commits_model_and_voice_atomically(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_MODEL] == "provider/free-speech:free"
     assert result["data"][CONF_VOICE] == "FreeVoice"
+    assert result["data"][CONF_MODEL_FILTER] == MODEL_FILTER_FREE_ONLY
+
+
+async def test_options_flow_switches_to_fish_provider_default_atomically(
+    hass: HomeAssistant,
+) -> None:
+    """Fish model and provider-default sentinel are committed in one final update."""
+    entry = _options_entry(hass, (*_models(), _fish_model()))
+    original_options = dict(entry.options)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "configure"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_MODEL_FILTER: MODEL_FILTER_FREE_ONLY}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_MODEL: FISH_AUDIO_S21_PRO_FREE_MODEL_ID}
+    )
+
+    assert result["step_id"] == "voice"
+    assert entry.options == original_options
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_VOICE: PROVIDER_DEFAULT_VOICE_ID,
+            CONF_SPEED: 1.5,
+            CONF_STORAGE_ROOT: hass.config.path("www", "audio", "tts"),
+        },
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_MODEL] == FISH_AUDIO_S21_PRO_FREE_MODEL_ID
+    assert result["data"][CONF_VOICE] == PROVIDER_DEFAULT_VOICE_ID
     assert result["data"][CONF_MODEL_FILTER] == MODEL_FILTER_FREE_ONLY
 
 
