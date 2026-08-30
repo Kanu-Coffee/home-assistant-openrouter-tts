@@ -47,7 +47,9 @@ Prerelease versions may contain breaking changes while the integration is being 
   POST HAOS Config/Options UI, real restart persistence, fresh catalog refresh, explicit
   reload, cleanup, and credential-pattern review. Live generation was intentionally not
   repeated after the separate ten-call Fish cap; final wire omission is covered by mock
-  tests. The exact pushed revision's required GitHub workflows remain the tag gate.
+  tests. Python/hassfest/HACS, Docker compatibility, CodeQL, and dependency-graph
+  workflows passed on the pushed release source; the exact final tag target repeats the
+  same required checks before publication.
 
 ### Documentation
 

@@ -7,7 +7,7 @@ skipped checks visible.
 
 ## Current release status
 
-Status as of 2026-08-30 for the final `v0.2.0` source candidate. Earlier beta results
+Status as of 2026-08-30 for the final `v0.2.0` release source. Earlier beta results
 remain below as historical evidence and are kept separate from final-source validation:
 
 | Area | Target | Status | Evidence or next action |
@@ -18,14 +18,13 @@ remain below as historical evidence and are kept separate from final-source vali
 | Minimum-version compatibility | Home Assistant 2025.12.0 container | Passed | Import, service/resource parsing, setup → unload → setup, and host-UID mode-0755 bind-mount save/read (mode 0600)/delete passed. Image digest: `sha256:8951fcbb794da8f261e1639c668639bc90f9520b48099b5715f6d5fbfef08a0e`. |
 | Current-stable compatibility | Home Assistant 2026.8.3 container | Passed | The same lifecycle and secure-storage checks passed. Image digest: `sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe`. |
 | hassfest | Final v0.2.0 repository | Passed | Local official validation reported one integration and zero invalid integrations. |
-| HACS validation | Final public repository revision | Pending post-push | The My Home Assistant badge and redirect returned HTTP 200 with the intended owner/repository/category. The pinned HACS action must pass on the pushed release revision before tagging. |
+| HACS validation | Public v0.2.0 release source | Passed; repeated on tag target | The pinned HACS job passed in [Quality run 33288925411](https://github.com/Kanu-Coffee/home-assistant-openrouter-tts/actions/runs/33288925411). The My Home Assistant badge and redirect returned HTTP 200 with the intended owner/repository/category. The same pinned job is required to pass again on the final documentation commit before tagging. |
 | HAOS end-to-end | HAOS 18.2 / Core 2026.8.3, final v0.2.0 component bytes | Passed with explicit generation gap | Config Flow exposed Fish as free and the provider-default voice, Options committed `free_only` atomically, one real Core restart preserved settings, manual refresh returned a fresh catalog, explicit entry reload passed, and the TTS entity loaded. Cleanup, final Core restart, zero entry/store/audio/token/credential-pattern counts, empty backup/snapshot lists, and VM shutdown passed. This final-source run intentionally made zero speech POSTs. |
 | OpenRouter live provider | `fish-audio/s2.1-pro-free:free`, direct and controlled HAOS paths | Passed provider behavior; final-source generation not repeated | Exactly 10 point-in-time attempts produced 9 successes; all 8 provider-default calls passed and one explicit public reference ID returned HTTP 400 without retry. Metadata/meter observations were zero-cost. The cap was already consumed, so final v0.2.0 bytes were validated with catalog/key GETs and mock wire assertions, not another generation POST. |
-| Secret scan | Final tracked worktree and complete Git history | Passed locally; repeat after commits | Gitleaks 8.30.1 found no leak in the worktree or 17-commit history. Explicit long key/bearer and private-address checks found zero tracked files; no audio remained. Trivy found no secret in the production component, whose manifest declares no runtime package requirements. Repeat after the release commits. |
+| Secret scan | Final tracked worktree and complete Git history | Passed | Gitleaks 8.30.1 found no leak after the release commits. Explicit long key/bearer and private-address checks found zero tracked files; no audio remained. Trivy found no secret in the production component, whose manifest declares no runtime package requirements. |
 | Upstream dev/test advisory | `cryptography==48.0.1` via Home Assistant 2026.8.3 | Dismissed as `not_used`; tracked | [GHSA-g6cj-pr64-35w5](https://github.com/advisories/GHSA-g6cj-pr64-35w5) affects PKCS#7 EnvelopedData decryption, which this integration and its tests do not call or expose. Home Assistant pins 48.0.1 exactly; reassess when upstream permits 50.0.0 or later. A full-development Trivy scan also flags CVE-2026-69249, but the [upstream advisory](https://github.com/advisories/GHSA-jwv3-5hgf-82ww) affects versions before 48.0.0, so locked 48.0.1 is outside its published range. |
 
-The HACS and secret rows are repeated after the release commits are pushed; tagging is
-blocked until the exact public revision's required workflows pass.
+The stable tag is created only after the exact public revision's required workflows pass.
 
 ## Current mock test scope
 
@@ -304,10 +303,10 @@ Local: Ruff/format/strict mypy passed; 212 pytest cases passed; branch-enabled c
 Docker minimum: HA Core 2025.12.0 passed lifecycle and secure-storage checks; digest sha256:8951fcbb794da8f261e1639c668639bc90f9520b48099b5715f6d5fbfef08a0e
 Docker stable: HA Core 2026.8.3 passed the same checks; digest sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe
 hassfest: passed locally; one integration, zero invalid
-HACS validation: My Home Assistant badge/redirect HTTP 200; pinned action must pass on the exact pushed revision before tagging
+HACS validation: pinned HACS job passed in Quality run 33288925411 on the release source; badge/redirect HTTP 200; the same job is required on the final docs-only tag target
 HAOS: final component bytes passed Fish Free/provider-default Config Flow, atomic free_only Options Flow, real restart persistence, fresh manual refresh, explicit reload, TTS entity load, cleanup, final restart, zero credential/artifact counts, and VM shutdown; speech POST count 0
 Live OpenRouter: separate Fish exact-model behavior probe completed exactly 10 attempts: 9 passed, 1 explicit public reference-ID request returned HTTP 400 without retry; all 8 provider-default attempts passed; successful metadata and 60-second meter observation reported zero cost/delta; final-source generation intentionally not repeated after the cap
-Secret scan: Gitleaks 8.30.1 worktree and 17-commit history passed; explicit long key/bearer/private-IP checks and workspace audio count were zero; repeat after release commits
+Secret scan: Gitleaks 8.30.1 passed after the release commits; explicit long key/bearer/private-IP checks and workspace audio count were zero
 Known failures/skips: the Fish catalog reports supported_voices null and the provider chooses an unpinned default voice; production latency/availability and future free pricing are not guaranteed; final-source live generation, physical-speaker playback, HAOS runtime reauthentication, and invalid-pair UI exercise were not run; temporary-key owner revocation is pending; the documented upstream dev/test cryptography advisory awaits a compatible Home Assistant pin
 ```
 
