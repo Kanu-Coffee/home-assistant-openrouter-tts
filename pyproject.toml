@@ -27,7 +27,7 @@ dev = [
   "pytest==9.0.3",
   "pytest-cov==7.1.0",
   "pytest-homeassistant-custom-component==0.13.357; python_full_version >= '3.14.2'",
-  "ruff==0.16.5",
+  "ruff==0.17.3",
 ]
 
 [tool.hatch.build.targets.wheel]
